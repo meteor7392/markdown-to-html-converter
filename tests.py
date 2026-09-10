@@ -35,5 +35,13 @@ class TestMarkdownConverter(unittest.TestCase):
         self.assertEqual(self.converter.convert('[Google](https://google.com)'), '<p><a href="https://google.com">Google</a></p>')
         self.assertEqual(self.converter.convert('![Alt text](img.jpg)'), '<p><img src="img.jpg" alt="Alt text"></p>')
 
+    def test_code(self):
+        # Inline code
+        self.assertEqual(self.converter.convert('Use `print()`'), '<p>Use <code>print()</code></p>')
+        # Code block
+        md = "```\nprint('hello')\n```"
+        expected = "<pre><code>\nprint('hello')\n</code></pre>"
+        self.assertEqual(self.converter.convert(md), expected)
+
 if __name__ == '__main__':
     unittest.main()

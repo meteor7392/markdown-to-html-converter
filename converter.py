@@ -12,8 +12,23 @@ class MarkdownConverter:
         in_list = False
         list_type = None  # 'ul' or 'ol'
         in_blockquote = False
+        in_code_block = False
 
         for line in lines:
+            # Handle fenced code blocks
+            if line.startswith('```'):
+                if not in_code_block:
+                    html_output.append('<pre><code>')
+                    in_code_block = True
+                else:
+                    html_output.append('</code></pre>')
+                    in_code_block = False
+                continue
+            
+            if in_code_block:
+                html_output.append(line)
+                continue
+
             # Handle blockquotes
             if line.startswith('> '):
                 if not in_blockquote:
@@ -79,10 +94,14 @@ class MarkdownConverter:
             html_output.append(f'</{list_type}>')
         if in_blockquote:
             html_output.append('</blockquote>')
+        if in_code_block:
+            html_output.append('</code></pre>')
 
         return '\n'.join(html_output)
 
     def _parse_inline(self, text):
+        # Inline code: `code`
+        text = re.sub(r'`([^`]+)`', r'<code>\1</code>', text)
         # Inline images: ![alt](url)
         text = re.sub(r'!\[(.*?)\]\((.*?)\)', r'<img src="\2" alt="\1">', text)
         # Inline links: [text](url)
