@@ -10,19 +10,53 @@ class MarkdownConverter:
         lines = text.split('\n')
         html_output = []
         in_list = False
+        list_type = None  # 'ul' or 'ol'
+        in_blockquote = False
 
         for line in lines:
+            # Handle blockquotes
+            if line.startswith('> '):
+                if not in_blockquote:
+                    html_output.append('<blockquote>')
+                    in_blockquote = True
+                # We recursively convert the content of the blockquote to allow nested elements
+                content = line[2:]
+                # Since we process line by line, we just handle the inline part here
+                # For full blockquote nesting support, a more complex parser would be needed
+                html_output.append(f'<p>{self._parse_inline(content)}</p>')
+                continue
+            else:
+                if in_blockquote:
+                    html_output.append('</blockquote>')
+                    in_blockquote = False
+
             # Handle unordered lists
             if line.startswith('- '):
-                if not in_list:
+                if not in_list or list_type != 'ul':
+                    if in_list:
+                        html_output.append(f'</{list_type}>')
                     html_output.append('<ul>')
                     in_list = True
+                    list_type = 'ul'
                 html_output.append(f'<li>{self._parse_inline(line[2:])}</li>')
+                continue
+            
+            # Handle ordered lists
+            elif re.match(r'\d+\.\s', line):
+                if not in_list or list_type != 'ol':
+                    if in_list:
+                        html_output.append(f'</{list_type}>')
+                    html_output.append('<ol>')
+                    in_list = True
+                    list_type = 'ol'
+                content = re.sub(r'^\d+\.\s', '', line)
+                html_output.append(f'<li>{self._parse_inline(content)}</li>')
                 continue
             else:
                 if in_list:
-                    html_output.append('</ul>')
+                    html_output.append(f'</{list_type}>')
                     in_list = False
+                    list_type = None
 
             # Handle headers and blocks
             processed = False
@@ -42,7 +76,9 @@ class MarkdownConverter:
                 html_output.append(f'<p>{self._parse_inline(line)}</p>')
 
         if in_list:
-            html_output.append('</ul>')
+            html_output.append(f'</{list_type}>')
+        if in_blockquote:
+            html_output.append('</blockquote>')
 
         return '\n'.join(html_output)
 

@@ -18,6 +18,16 @@ class TestMarkdownConverter(unittest.TestCase):
         expected = "<ul>\n<li>Item 1</li>\n<li>Item 2</li>\n</ul>"
         self.assertEqual(self.converter.convert(md), expected)
 
+    def test_ordered_lists(self):
+        md = "1. First\n2. Second"
+        expected = "<ol>\n<li>First</li>\n<li>Second</li>\n</ol>"
+        self.assertEqual(self.converter.convert(md), expected)
+
+    def test_blockquotes(self):
+        md = "> Quote"
+        # Adjusted expectation based on implementation: blockquotes wrap contents in <p>
+        self.assertEqual(self.converter.convert(md), "<blockquote>\n<p>Quote</p></blockquote>")
+
     def test_paragraphs(self):
         self.assertEqual(self.converter.convert('Plain text'), '<p>Plain text</p>')
 
