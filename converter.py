@@ -4,11 +4,7 @@ class MarkdownConverter:
     """A simple Markdown to HTML converter."""
     
     def __init__(self):
-        self.rules = [
-            (r'^# (.*)$', r'<h1 Primeira>\1</h1>'),
-            (r'^## (.*)$', r'<h2>\1</h2>'),
-            (r'^### (.*)$', r'<h3>\1</h3>'),
-        ]
+        pass
 
     def convert(self, text):
         lines = text.split('\n')
@@ -30,7 +26,6 @@ class MarkdownConverter:
 
             # Handle headers and blocks
             processed = False
-            # Note: Simplified rules for headers since block-level logic handles them
             if line.startswith('# '):
                 html_output.append(f'<h1>{self._parse_inline(line[2:])}</h1>')
                 processed = True
