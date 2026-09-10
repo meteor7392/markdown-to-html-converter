@@ -21,5 +21,9 @@ class TestMarkdownConverter(unittest.TestCase):
     def test_paragraphs(self):
         self.assertEqual(self.converter.convert('Plain text'), '<p>Plain text</p>')
 
+    def test_links_and_images(self):
+        self.assertEqual(self.converter.convert('[Google](https://google.com)'), '<p><a href="https://google.com">Google</a></p>')
+        self.assertEqual(self.converter.convert('![Alt text](img.jpg)'), '<p><img src="img.jpg" alt="Alt text"></p>')
+
 if __name__ == '__main__':
     unittest.main()

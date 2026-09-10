@@ -5,13 +5,9 @@ class MarkdownConverter:
     
     def __init__(self):
         self.rules = [
-            (r'^# (.*)$', r'<h1>\1</h1>'),
+            (r'^# (.*)$', r'<h1 Primeira>\1</h1>'),
             (r'^## (.*)$', r'<h2>\1</h2>'),
             (r'^### (.*)$', r'<h3>\1</h3>'),
-            (r'^\*\*(.*?)\*\*', r'<strong>\1</strong>'),
-            (r'^__(.*?)__', r'<strong>\1</strong>'),
-            (r'^\*(.*?)\*$', r'<em>\1</em>'),
-            (r'^_(.*?)_$', r'<em>\1</em>'),
         ]
 
     def convert(self, text):
@@ -34,11 +30,16 @@ class MarkdownConverter:
 
             # Handle headers and blocks
             processed = False
-            for pattern, replacement in self.rules:
-                if re.match(pattern, line):
-                    html_output.append(re.sub(pattern, replacement, line))
-                    processed = True
-                    break
+            # Note: Simplified rules for headers since block-level logic handles them
+            if line.startswith('# '):
+                html_output.append(f'<h1>{self._parse_inline(line[2:])}</h1>')
+                processed = True
+            elif line.startswith('## '):
+                html_output.append(f'<h2>{self._parse_inline(line[3:])}</h2>')
+                processed = True
+            elif line.startswith('### '):
+                html_output.append(f'<h3>{self._parse_inline(line[4:])}</h3>')
+                processed = True
             
             if not processed:
                 if line.strip() == '':
@@ -51,9 +52,14 @@ class MarkdownConverter:
         return '\n'.join(html_output)
 
     def _parse_inline(self, text):
-        # Simple inline formatting for bold and italic
+        # Inline images: ![alt](url)
+        text = re.sub(r'!\[(.*?)\]\((.*?)\)', r'<img src="\2" alt="\1">', text)
+        # Inline links: [text](url)
+        text = re.sub(r'\[(.*?)\]\((.*?)\)', r'<a href="\2">\1</a>', text)
+        # Bold
         text = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', text)
         text = re.sub(r'__(.*?)__', r'<strong>\1</strong>', text)
+        # Italic
         text = re.sub(r'\*(.*?)\*', r'<em>\1</em>', text)
         text = re.sub(r'_(.*?)_', r'<em>\1</em>', text)
         return text
