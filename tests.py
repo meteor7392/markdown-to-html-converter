@@ -25,7 +25,6 @@ class TestMarkdownConverter(unittest.TestCase):
 
     def test_blockquotes(self):
         md = "> Quote"
-        # Adjusted expectation based on implementation: blockquotes wrap contents in <p>
         self.assertEqual(self.converter.convert(md), "<blockquote>\n<p>Quote</p></blockquote>")
 
     def test_paragraphs(self):
