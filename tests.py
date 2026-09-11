@@ -43,5 +43,10 @@ class TestMarkdownConverter(unittest.TestCase):
         expected = "<pre><code>\nprint('hello')\n</code></pre>"
         self.assertEqual(self.converter.convert(md), expected)
 
+    def test_horizontal_rule(self):
+        self.assertEqual(self.converter.convert('---'), '<hr>')
+        self.assertEqual(self.converter.convert('***'), '<hr>')
+        self.assertEqual(self.converter.convert('___'), '<hr>')
+
 if __name__ == '__main__':
     unittest.main()

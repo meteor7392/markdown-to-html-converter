@@ -5,7 +5,11 @@ A lightweight Python library to convert basic Markdown syntax into HTML5.
 ## Features
 - Headers (H1, H2, H3)
 - Bold and Italic text
-- Unordered lists
+- Unordered and Ordered lists
+- Blockquotes
+- Code blocks and inline code
+- Links and Images
+- Horizontal Rules
 - Paragraph handling
 
 ## Usage

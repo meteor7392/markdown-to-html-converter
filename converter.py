@@ -73,6 +73,11 @@ class MarkdownConverter:
                     in_list = False
                     list_type = None
 
+            # Handle horizontal rules
+            if line.strip() == '---' or line.strip() == '***' or line.strip() == '___':
+                html_output.append('<hr>')
+                continue
+
             # Handle headers and blocks
             processed = False
             if line.startswith('# '):
