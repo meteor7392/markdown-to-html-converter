@@ -1,4 +1,5 @@
 import re
+import html
 
 class MarkdownConverter:
     """A simple Markdown to HTML converter."""
@@ -26,7 +27,8 @@ class MarkdownConverter:
                 continue
             
             if in_code_block:
-                html_output.append(line)
+                # Escape HTML in code blocks to prevent rendering
+                html_output.append(html.escape(line))
                 continue
 
             # Handle blockquotes
@@ -103,8 +105,11 @@ class MarkdownConverter:
         return '\n'.join(html_output)
 
     def _parse_inline(self, text):
+        # First, escape HTML special characters to prevent XSS
+        text = html.escape(text)
+
         # Inline code: `code`
-        text = re.sub(r'`([^`]+)`', r'<code>\1</code>', text)
+        text = re.sub(r'`([^`]+)`', r'<code >\1</code>', text)
         # Inline images: ![alt](url)
         text = re.sub(r'!\[(.*?)\]\((.*?)\)', r'<img src="\2" alt="\1">', text)
         # Inline links: [text](url)
