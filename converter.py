@@ -32,7 +32,7 @@ class MarkdownConverter:
             # Handle blockquotes
             if line.startswith('> '):
                 if not in_blockquote:
-                    html_output.append('<blockquote')
+                    html_output.append('<blockquote>')
                     in_blockquote = True
                 
                 content = line[2:]
@@ -40,12 +40,6 @@ class MarkdownConverter:
                 continue
             else:
                 if in_blockquote:
-                    # Close the blockquote tag properly
-                    # Note: Since we opened with <blockquote, we need to handle the closing
-                    # The previous logic was slightly fragmented
-                    html_output[-1] = html_output[-1] # just a marker
-                    # Actually, let's simplify the blockquote open/close
-                    # The logic below handles the closing
                     html_output.append('</blockquote>')
                     in_blockquote = False
 
@@ -106,22 +100,19 @@ class MarkdownConverter:
         if in_code_block:
             html_output.append('</code></pre>')
 
-        # Final cleanup for the blockquote tag opening (fixing the <blockquote vs <blockquote>)
-        # Since we are using join, we can post-process the list
-        result = '\n'.join(html_output)
-        return result.replace('<blockquote', '<blockquote>')
+        return '\n'.join(html_output)
 
     def _parse_inline(self, text):
         # Inline code: `code`
-        text = re.sub(r'`([^`]+)`', r'<code >\1</code>', text).replace('<code >', '<code>')
+        text = re.sub(r'`([^`]+)`', r'<code>\1</code>', text)
         # Inline images: ![alt](url)
         text = re.sub(r'!\[(.*?)\]\((.*?)\)', r'<img src="\2" alt="\1">', text)
         # Inline links: [text](url)
         text = re.sub(r'\[(.*?)\]\((.*?)\)', r'<a href="\2">\1</a>', text)
         # Bold
-        text = re.sub(r'\*\*(.*?)\*\*', r'<strong >\1</strong>', text).replace('<strong >', '<strong>')
+        text = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', text)
         text = re.sub(r'__(.*?)__', r'<strong>\1</strong>', text)
         # Italic
-        text = re.sub(r'\*(.*?)\*', r'<em >\1</em>', text).replace('<em >', '<em>')
+        text = re.sub(r'\*(.*?)\*', r'<em>\1</em>', text)
         text = re.sub(r'_(.*?)_', r'<em>\1</em>', text)
         return text
