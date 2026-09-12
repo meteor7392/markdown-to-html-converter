@@ -109,7 +109,7 @@ class MarkdownConverter:
         text = html.escape(text)
 
         # Inline code: `code`
-        text = re.sub(r'`([^`]+)`', r'<code>\1</code>', text)
+        text = re.sub(r'`([^`]+)`', r'<code >\1</code>', text).replace('<code >', '<code>')
         # Inline images: ![alt](url)
         text = re.sub(r'!\[(.*?)\]\((.*?)\)', r'<img src="\2" alt="\1">', text)
         # Inline links: [text](url)
