@@ -58,5 +58,11 @@ class TestMarkdownConverter(unittest.TestCase):
     def test_html_escaping(self):
         self.assertEqual(self.converter.convert('<script>alert(1)</script>'), '<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>')
 
+    def test_nested_styles(self):
+        # Bold inside link
+        self.assertEqual(self.converter.convert('[**Bold Link**](url)'), '<p><a href="url"><strong>Bold Link</strong></a></p>')
+        # Italic inside bold
+        self.assertEqual(self.converter.convert('***Bold Italic***'), '<p><strong><em>Bold Italic</em></strong></p>')
+
 if __name__ == '__main__':
     unittest.main()
