@@ -47,5 +47,16 @@ class TestMarkdownConverter(unittest.TestCase):
         self.assertEqual(self.converter.convert('***'), '<hr>')
         self.assertEqual(self.converter.convert('___'), '<hr>')
 
+    def test_mixed_content(self):
+        md = "# Title\n\nThis is **bold** and [a link](url).
+
+- List 1
+- List 2"
+        expected = "<h1>Title</h1>\n<p>This is <strong>bold</strong> and <a href=\"url\">a link</a>.</p>\n<ul>\n<li>List 1</li>\n<li>List 2</li>\n</ul>"
+        self.assertEqual(self.converter.convert(md), expected)
+
+    def test_html_escaping(self):
+        self.assertEqual(self.converter.convert('<script>alert(1)</script>'), '<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>')
+
 if __name__ == '__main__':
     unittest.main()
