@@ -84,10 +84,10 @@ class MarkdownConverter:
                 html_output.append(f'<h1>{self._parse_inline(line[2:])}</h1>')
                 processed = True
             elif line.startswith('## '):
-                html_output.append(f'<h2>{self._parse_inline(line[3:])}</h2>')
+                html_output.append(f'<h2>{self._parse_inline(line[3:])}</h2>>')
                 processed = True
             elif line.startswith('### '):
-                html_output.append(f'<h3>{self._parse_inline(line[4:])}</h3>')
+                html_output.append(f'<h3>{self._parse_inline(line[4:])}</h3>>')
                 processed = True
             
             if not processed:
