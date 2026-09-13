@@ -64,5 +64,14 @@ class TestMarkdownConverter(unittest.TestCase):
         # Italic inside bold
         self.assertEqual(self.converter.convert('***Bold Italic***'), '<p><strong><em>Bold Italic</em></strong></p>')
 
+    def test_empty_input(self):
+        self.assertEqual(self.converter.convert(''), '')
+        self.assertEqual(self.converter.convert('\n\n'), '')
+
+    def test_unordered_list_transition(self):
+        md = "- UL 1\n1. OL 1"
+        expected = "<ul>\n<li>UL 1</li>\n</ul>\n<ol>\n<li>OL 1</li>\n</ol>"
+        self.assertEqual(self.converter.convert(md), expected)
+
 if __name__ == '__main__':
     unittest.main()
