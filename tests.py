@@ -39,9 +39,6 @@ class TestMarkdownConverter(unittest.TestCase):
         self.assertEqual(self.converter.convert('Use `print()`'), '<p>Use <code>print()</code></p>')
         # Code block
         md = "```\nprint('hello')\n```"
-        expected = "<pre><code >\nprint('hello')\n</code></pre>".replace('<code >', '<code>')
-        # Note: converter.py implementation of code blocks doesn't currently use _parse_inline, 
-        # but we should check the output matches actual behavior
         self.assertEqual(self.converter.convert(md), "<pre><code>\nprint('hello')\n</code></pre>")
 
     def test_horizontal_rule(self):
