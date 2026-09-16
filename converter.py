@@ -89,6 +89,15 @@ class MarkdownConverter:
             elif line.startswith('### '):
                 html_output.append(f'<h3>{self._parse_inline(line[4:])}</h3>')
                 processed = True
+            elif line.startswith('#### '):
+                html_output.append(f'<h4>{self._parse_inline(line[5:])}</h4>')
+                processed = True
+            elif line.startswith('##### '):
+                html_output.append(f'<h5>{self._parse_inline(line[6:])}</h5>')
+                processed = True
+            elif line.startswith('###### '):
+                html_output.append(f'<h6>{self._parse_inline(line[7:])}</h6>')
+                processed = True
             
             if not processed:
                 if line.strip() == '':
@@ -109,7 +118,7 @@ class MarkdownConverter:
         text = html.escape(text)
 
         # Inline code: `code`
-        text = re.sub(r'`([^`]+)`', r'<code>\1</code>', text)
+        text = re.sub(r'`([^`]+)`', r'<code >\1</code>', text)
         # Inline images: ![alt](url)
         text = re.sub(r'!\[(.*?)\]\((.*?)\)', r'<img src="\2" alt="\1">', text)
         # Inline links: [text](url)

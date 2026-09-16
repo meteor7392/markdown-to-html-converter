@@ -8,6 +8,10 @@ class TestMarkdownConverter(unittest.TestCase):
     def test_headers(self):
         self.assertEqual(self.converter.convert('# Hello'), '<h1>Hello</h1>')
         self.assertEqual(self.converter.convert('## Subtitle'), '<h2>Subtitle</h2>')
+        self.assertEqual(self.converter.convert('### Section'), '<h3>Section</h3>')
+        self.assertEqual(self.converter.convert('#### Sub'), '<h4>Sub</h4>')
+        self.assertEqual(self.converter.convert('##### Sub'), '<h5>Sub</h5>')
+        self.assertEqual(self.converter.convert('###### Sub'), '<h6>Sub</h6>')
 
     def test_bold_italic(self):
         self.assertEqual(self.converter.convert('This is **bold**'), '<p>This is <strong>bold</strong></p>')
