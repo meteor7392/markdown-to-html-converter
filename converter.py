@@ -118,6 +118,8 @@ class MarkdownConverter:
         text = html.escape(text)
 
         # Inline code: `code`
+        text = re.sub(r'`([^`]*)`', r'<code >\1</code>', text)
+        # Note: The regex replacement below should not contain spaces inside tags
         text = re.sub(r'`([^`]*)`', r'<code>\1</code>', text)
         
         # Inline images: ![alt](url)
