@@ -41,6 +41,8 @@ class TestMarkdownConverter(unittest.TestCase):
     def test_code(self):
         # Inline code
         self.assertEqual(self.converter.convert('Use `print()`'), '<p>Use <code>print()</code></p>')
+        # Empty inline code
+        self.assertEqual(self.converter.convert('Empty `` code'), '<p>Empty <code></code> code</p>')
         # Code block
         md = "```\nprint('hello')\n```"
         self.assertEqual(self.converter.convert(md), "<pre><code>\nprint('hello')\n</code></pre>")
