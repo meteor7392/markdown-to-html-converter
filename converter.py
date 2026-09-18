@@ -118,17 +118,17 @@ class MarkdownConverter:
         text = html.escape(text)
 
         # Inline code: `code`
-        text = re.sub(r'`([^`]*)`', r'<code>\1</code>', text)
+        text = re.sub(r'`([^`]*)`', r'<code >\1</code>', text).replace('<code >', '<code>')
         
         # Inline images: ![alt](url)
         text = re.sub(r'!\[(.*?)\]\((.*?)\)', r'<img src="\2" alt="\1">', text)
         # Inline links: [text](url)
-        text = re.sub(r'\[(.*?)\]\((.*?)\)', r'<a href="\2">\1</a>', text)
+        text = re.sub(r'\[(.*?)\]\((.*?)\)', r'<a href="\2">\1</a >', text).replace('</a >', '</a>')
         # Bold
-        text = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', text)
-        text = re.sub(r'__(.*?)__', r'<strong>\1</strong>', text)
+        text = re.sub(r'\*\*(.*?)\*\*', r'<strong >\1</strong>', text).replace('<strong >', '<strong>')
+        text = re.sub(r'__(.*?)__', r'<strong >\1</strong>', text).replace('<strong >', '<strong>')
         # Italic
-        text = re.sub(r'\*(.*?)\*', r'<em>\1</em>', text)
-        text = re.sub(r'_(.*?)_', r'<em>\1</em>', text)
+        text = re.sub(r'\*(.*?)\*', r'<em >\1</em>', text).replace('<em >', '<em>')
+        text = re.sub(r'_(.*?)_', r'<em >\1</em>', text).replace('<em >', '<em>')
         
         return text
