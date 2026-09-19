@@ -55,7 +55,7 @@ class MarkdownConverter:
                     html_output.append('<ul>')
                     in_list = True
                     list_type = 'ul'
-                content = line.lstrip(' ').lstrip('- ')
+                content = re.sub(r'^\s*- ', '', line)
                 html_output.append(f'<li>{self._parse_inline(content)}</li>')
                 continue
             
