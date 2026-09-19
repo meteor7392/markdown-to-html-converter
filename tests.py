@@ -45,7 +45,7 @@ class TestMarkdownConverter(unittest.TestCase):
         self.assertEqual(self.converter.convert('Empty `` code'), '<p>Empty <code></code> code</p>')
         # Code block
         md = "```\nprint('hello')\n```"
-        self.assertEqual(self.converter.convert(md), "<pre><code>\nprint('hello')\n</code></pre>")
+        self.assertEqual(self.converter.convert(md), "<pre><code>print('hello')</code></pre>")
 
     def test_horizontal_rule(self):
         self.assertEqual(self.converter.convert('---'), '<hr>')

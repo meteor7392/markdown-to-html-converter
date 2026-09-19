@@ -14,21 +14,23 @@ class MarkdownConverter:
         list_type = None  # 'ul' or 'ol'
         in_blockquote = False
         in_code_block = False
+        code_buffer = []
 
         for line in lines:
             # Handle fenced code blocks
             if line.startswith('```'):
                 if not in_code_block:
-                    html_output.append('<pre><code>')
                     in_code_block = True
+                    code_buffer = []
                 else:
+                    html_output.append('<pre><code>')
+                    html_output.append('\n'.join(code_buffer))
                     html_output.append('</code></pre>')
                     in_code_block = False
                 continue
             
             if in_code_block:
-                # Escape HTML in code blocks to prevent rendering
-                html_output.append(html.escape(line))
+                code_buffer.append(html.escape(line))
                 continue
 
             # Handle blockquotes
@@ -110,6 +112,8 @@ class MarkdownConverter:
         if in_blockquote:
             html_output.append('</blockquote>')
         if in_code_block:
+            html_output.append('<pre><code>')
+            html_output.append('\n'.join(code_buffer))
             html_output.append('</code></pre>')
 
         return '\n'.join(html_output)
