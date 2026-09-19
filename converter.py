@@ -129,15 +129,15 @@ class MarkdownConverter:
         text = re.sub(r'<code-block>(.*?)</code-block>', r'<code>\1</code>', text)
         
         # Process bold and italic before links so we can have styling inside links
-        # Bold-Italic
+        # Bold-Italic - Use non-greedy matching
         text = re.sub(r'\*\*\*(.*?)\*\*\*', r'<strong><em>\1</em></strong>', text)
         text = re.sub(r'___(.*?)___', r'<strong><em>\1</em></strong>', text)
 
-        # Bold
+        # Bold - Use non-greedy matching
         text = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', text)
         text = re.sub(r'__(.*?)__', r'<strong>\1</strong>', text)
         
-        # Italic
+        # Italic - Use non-greedy matching
         text = re.sub(r'\*(.*?)\*', r'<em>\1</em>', text)
         text = re.sub(r'_(.*?)_', r'<em>\1</em>', text)
 
