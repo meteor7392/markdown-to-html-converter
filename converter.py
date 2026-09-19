@@ -46,25 +46,26 @@ class MarkdownConverter:
                     in_blockquote = False
 
             # Handle unordered lists
-            if line.startswith('- '):
+            if line.startswith('- ') or (in_list and list_type == 'ul' and line.startswith('  - ')):
                 if not in_list or list_type != 'ul':
                     if in_list:
                         html_output.append(f'</{list_type}>')
                     html_output.append('<ul>')
                     in_list = True
                     list_type = 'ul'
-                html_output.append(f'<li>{self._parse_inline(line[2:])}</li>')
+                content = line.lstrip(' ').lstrip('- ')
+                html_output.append(f'<li>{self._parse_inline(content)}</li>')
                 continue
             
             # Handle ordered lists
-            elif re.match(r'\d+\.\s', line):
+            elif re.match(r'\d+\.\s', line) or (in_list and list_type == 'ol' and re.search(r'\s+\d+\.\s', line)):
                 if not in_list or list_type != 'ol':
                     if in_list:
                         html_output.append(f'</{list_type}>')
                     html_output.append('<ol>')
                     in_list = True
                     list_type = 'ol'
-                content = re.sub(r'^\d+\.\s', '', line)
+                content = re.sub(r'^\s*\d+\.\s', '', line)
                 html_output.append(f'<li>{self._parse_inline(content)}</li>')
                 continue
             else:
@@ -118,6 +119,8 @@ class MarkdownConverter:
         text = html.escape(text)
 
         # Inline code: `code`
+        text = re.sub(r'`([^`]*)`', r'<code />\1</code>', text).replace('<code />', '<code>')
+        # Wait, the previous logic was simpler. Let's just use a clean regex.
         text = re.sub(r'`([^`]*)`', r'<code>\1</code>', text)
         
         # Inline images: ![alt](url)
