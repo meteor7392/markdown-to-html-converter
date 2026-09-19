@@ -119,7 +119,7 @@ class MarkdownConverter:
         text = html.escape(text)
 
         # Inline code: `code`
-        text = re.sub(r'`([^`]*)`', r'<code />\1</code>', text).replace('<code />', '<code>')
+        text = re.sub(r'`([^`]*)`', r'<code >\1</code>', text).replace('<code >', '<code>')
         # Wait, the previous logic was simpler. Let's just use a clean regex.
         text = re.sub(r'`([^`]*)`', r'<code>\1</code>', text)
         
