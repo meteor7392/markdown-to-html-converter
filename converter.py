@@ -124,7 +124,6 @@ class MarkdownConverter:
 
         # Inline code: `code`
         text = re.sub(r'`([^`]*)`', r'<code >\1</code>', text).replace('<code >', '<code>')
-        text = re.sub(r'`([^`]*)`', r'<code>\1</code>', text)
         
         # Inline images: ![alt](url)
         text = re.sub(r'!\[(.*?)\]\((.*?)\)', r'<img src="\2" alt="\1">', text)
