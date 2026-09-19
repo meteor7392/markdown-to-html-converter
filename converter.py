@@ -124,16 +124,21 @@ class MarkdownConverter:
 
         # Inline code: `code`
         text = re.sub(r'`([^`]*)`', r'<code >\1</code>', text).replace('<code >', '<code>')
-        # Wait, the previous logic was simpler. Let's just use a clean regex.
         text = re.sub(r'`([^`]*)`', r'<code>\1</code>', text)
         
         # Inline images: ![alt](url)
         text = re.sub(r'!\[(.*?)\]\((.*?)\)', r'<img src="\2" alt="\1">', text)
         # Inline links: [text](url)
         text = re.sub(r'\[(.*?)\]\((.*?)\)', r'<a href="\2">\1</a>', text)
+        
+        # Bold-Italic (3 stars or 3 underscores)
+        text = re.sub(r'\*\*\*(.*?)\*\*\*', r'<strong><em>\1</em></strong>', text)
+        text = re.sub(r'___(.*?)___', r'<strong><em>\1</em></strong>', text)
+
         # Bold
         text = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', text)
         text = re.sub(r'__(.*?)__', r'<strong>\1</strong>', text)
+        
         # Italic
         text = re.sub(r'\*(.*?)\*', r'<em>\1</em>', text)
         text = re.sub(r'_(.*?)_', r'<em>\1</em>', text)
