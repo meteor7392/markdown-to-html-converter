@@ -124,10 +124,8 @@ class MarkdownConverter:
 
         # Inline code: `code` - Processed first to avoid interpreting markdown inside code
         text = re.sub(r'`([^`]*)`', r'<code-block>\1</code-block>', text)
-        # Wait, the original had <code>. Let's fix the link tag and keep the rest consistent with previous logic but correcting the link tag.
-        # Correcting the link regex: [text](url) -> <a href="url">text</a>
         
-        # Re-evaluating: the provided source had <code>
+        # Re-evaluating: the provided source had <code-block> as a temporary marker
         text = re.sub(r'<code-block>(.*?)</code-block>', r'<code>\1</code>', text)
         
         # Process bold and italic before links so we can have styling inside links
