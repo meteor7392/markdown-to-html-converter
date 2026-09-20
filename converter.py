@@ -126,7 +126,7 @@ class MarkdownConverter:
         text = re.sub(r'`([^`]*)`', r'<code >\1</code>', text).replace('<code >', '<code>')
         # Note: The above is a bit clunky but ensures we don't mess with brackets if we change logic. 
         # Let's use a cleaner sub.
-        text = re.sub(r'`([^`]*)`', r'<code>\1</code>', text)
+        text = re.sub(r'`([^`]*)`', r'<code >\1</code>', text).replace('<code >', '<code>')
         
         # Process bold and italic before links so we can have styling inside links
         # Bold-Italic - Use non-greedy matching
