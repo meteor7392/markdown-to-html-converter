@@ -123,10 +123,7 @@ class MarkdownConverter:
         text = html.escape(text)
 
         # Inline code: `code` - Processed first to avoid interpreting markdown inside code
-        text = re.sub(r'`([^`]*)`', r'<code-block>\1</code-block>', text)
-        
-        # Re-evaluating: the provided source had <code-block> as a temporary marker
-        text = re.sub(r'<code-block>(.*?)</code-block>', r'<code>\1</code>', text)
+        text = re.sub(r'`([^`]*)`', r'<code>\1</code>', text)
         
         # Process bold and italic before links so we can have styling inside links
         # Bold-Italic - Use non-greedy matching
