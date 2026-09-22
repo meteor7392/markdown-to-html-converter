@@ -88,5 +88,8 @@ class TestMarkdownConverter(unittest.TestCase):
         expected = "<blockquote>\n<p>Quote 1</p></blockquote>\n<p>Plain text</p>\n<blockquote>\n<p>Quote 2</p></blockquote>"
         self.assertEqual(self.converter.convert(md), expected)
 
+    def test_empty_link(self):
+        self.assertEqual(self.converter.convert('[]()'), '<p><a href=""></a></p>')
+
 if __name__ == '__main__':
     unittest.main()
