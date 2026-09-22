@@ -143,6 +143,9 @@ class MarkdownConverter:
         text = re.sub(r'\*([^*]+?)\*', r'<em>\1</em>', text)
         text = re.sub(r'_([^_]+?)_', r'<em>\1</em>', text)
 
+        # Strike-through
+        text = re.sub(r'~~(.*?)~~', r'<s>\1</s>', text)
+
         # Inline images: ![alt](url)
         text = re.sub(r'!\[(.*?)\]\((.*?)\)', r'<img src="\2" alt="\1">', text)
         # Inline links: [text](url)
