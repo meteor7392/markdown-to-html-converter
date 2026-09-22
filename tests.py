@@ -94,5 +94,10 @@ class TestMarkdownConverter(unittest.TestCase):
     def test_empty_link(self):
         self.assertEqual(self.converter.convert('[]()'), '<p><a href=""></a></p>')
 
+    def test_task_lists(self):
+        md = "- [ ] Unchecked\n- [x] Checked"
+        expected = "<ul>\n<li><input type=\"checkbox\" disabled> Unchecked</li>\n<li><input type=\"checkbox\" checked disabled> Checked</li>\n</ul>"
+        self.assertEqual(self.converter.convert(md), expected)
+
 if __name__ == '__main__':
     unittest.main()

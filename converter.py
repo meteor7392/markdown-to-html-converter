@@ -122,6 +122,11 @@ class MarkdownConverter:
         # First, escape HTML special characters to prevent XSS
         text = html.escape(text)
 
+        # Task lists support (checkboxes)
+        text = re.sub(r'\[ \] ', r'<input type="checkbox" disabled> ', text)
+        text = re.sub(r'\[x\] ', r'<input type="checkbox" checked disabled> ', text)
+        text = re.sub(r'\[X\] ', r'<input type="checkbox" checked disabled> ', text)
+
         # Inline code: `code` - Processed first and stored in placeholders to avoid interpreting markdown inside code
         code_blocks = []
         def save_code(match):
