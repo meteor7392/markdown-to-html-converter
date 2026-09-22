@@ -122,28 +122,34 @@ class MarkdownConverter:
         # First, escape HTML special characters to prevent XSS
         text = html.escape(text)
 
-        # Inline code: `code` - Processed first to avoid interpreting markdown inside code
-        text = re.sub(r'`([^`]*)`', r'<code-block>\1</code-block>', text)
+        # Inline code: `code` - Processed first and stored in placeholders to avoid interpreting markdown inside code
+        code_blocks = []
+        def save_code(match):
+            code_blocks.append(match.group(1))
+            return f'__CODE_BLOCK_{len(code_blocks)-1}__'
+        
+        text = re.sub(r'`([^`]*)`', save_code, text)
         
         # Process bold and italic before links so we can have styling inside links
-        # Bold-Italic - Use non-greedy matching
+        # Bold-Italic
         text = re.sub(r'\*\*\*(.*?)\*\*\*', r'<strong><em>\1</em></strong>', text)
         text = re.sub(r'___(.*?)___', r'<strong><em>\1</em></strong>', text)
 
-        # Bold - Use non-greedy matching
+        # Bold
         text = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', text)
         text = re.sub(r'__(.*?)__', r'<strong>\1</strong>', text)
         
-        # Italic - Use non-greedy matching
+        # Italic
         text = re.sub(r'\*([^*]+)\*', r'<em>\1</em>', text)
         text = re.sub(r'_([^_]+)_', r'<em>\1</em>', text)
 
         # Inline images: ![alt](url)
         text = re.sub(r'!\[(.*?)\]\((.*?)\)', r'<img src="\2" alt="\1">', text)
-        # Inline links: [text](url)
+        # Inline links: [text](url) - Fixed closing tag </a>
         text = re.sub(r'\[(.*?)\]\((.*?)\)', r'<a href="\2">\1</a>', text)
         
-        # Fix inline code tag
-        text = text.replace('<code-block>', '<code>').replace('</code-block>', '</code>')
+        # Restore inline code
+        for i, code in enumerate(code_blocks):
+            text = text.replace(f'__CODE_BLOCK_{i}__', f'<code>{code}</code>')
 
         return text
