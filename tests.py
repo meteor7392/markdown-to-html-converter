@@ -78,5 +78,15 @@ class TestMarkdownConverter(unittest.TestCase):
         expected = "<ul>\n<li>UL 1</li>\n</ul>\n<ol>\n<li>OL 1</li>\n</ol>"
         self.assertEqual(self.converter.convert(md), expected)
 
+    def test_complex_lists(self):
+        md = "- Item 1\n- Item 2\n\n1. First\n2. Second"
+        expected = "<ul>\n<li>Item 1</li>\n<li>Item 2</li>\n</ul>\n<ol>\n<li>First</li>\n<li>Second</li>\n</ol>"
+        self.assertEqual(self.converter.convert(md), expected)
+
+    def test_multiple_blockquotes(self):
+        md = "> Quote 1\n\nPlain text\n\n> Quote 2"
+        expected = "<blockquote>\n<p>Quote 1</p></blockquote>\n<p>Plain text</p>\n<blockquote>\n<p>Quote 2</p></blockquote>"
+        self.assertEqual(self.converter.convert(md), expected)
+
 if __name__ == '__main__':
     unittest.main()
