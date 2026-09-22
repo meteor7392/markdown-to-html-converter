@@ -145,7 +145,7 @@ class MarkdownConverter:
 
         # Inline images: ![alt](url)
         text = re.sub(r'!\[(.*?)\]\((.*?)\)', r'<img src="\2" alt="\1">', text)
-        # Inline links: [text](url) - Fixed closing tag </a>
+        # Inline links: [text](url)
         text = re.sub(r'\[(.*?)\]\((.*?)\)', r'<a href="\2">\1</a>', text)
         
         # Restore inline code
