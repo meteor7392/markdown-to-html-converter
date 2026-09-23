@@ -99,5 +99,11 @@ class TestMarkdownConverter(unittest.TestCase):
         expected = "<ul>\n<li><input type=\"checkbox\" disabled> Unchecked</li>\n<li><input type=\"checkbox\" checked disabled> Checked</li>\n</ul>"
         self.assertEqual(self.converter.convert(md), expected)
 
+    def test_escaping(self):
+        self.assertEqual(self.converter.convert('\*Not bold\*'), '<p>*Not bold*</p>')
+        self.assertEqual(self.converter.convert('\`Not code\`'), '<p>`Not code`</p>')
+        self.assertEqual(self.converter.convert('Escaped \\ backslash'), '<p>Escaped \ backslash</p>')
+        self.assertEqual(self.converter.convert('Mixed \*bold\* and **real bold**'), '<p>Mixed *bold* and <strong>real bold</strong></p>')
+
 if __name__ == '__main__':
     unittest.main()

@@ -127,6 +127,15 @@ class MarkdownConverter:
         text = re.sub(r'\[x\] ', r'<input type="checkbox" checked disabled> ', text)
         text = re.sub(r'\[X\] ', r'<input type="checkbox" checked disabled> ', text)
 
+        # Handle escaping by storing escaped characters
+        escapes = []
+        def save_escape(match):
+            escapes.append(match.group(1))
+            return f'__ESC_{len(escapes)-1}__'
+        
+        # Escape *, _, `, ~, [, ]
+        text = re.sub(r'\\([*_`~\[\]])', save_escape, text)
+
         # Inline code: `code` - Processed first and stored in placeholders to avoid interpreting markdown inside code
         code_blocks = []
         def save_code(match):
@@ -159,5 +168,9 @@ class MarkdownConverter:
         # Restore inline code
         for i, code in enumerate(code_blocks):
             text = text.replace(f'__CODE_BLOCK_{i}__', f'<code>{code}</code>')
+
+        # Restore escaped characters
+        for i, char in enumerate(escapes):
+            text = text.replace(f'__ESC_{i}__', char)
 
         return text
