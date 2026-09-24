@@ -39,9 +39,23 @@ class MarkdownConverter:
             # Header
             header_line = table_buffer[0].strip('|')
             headers = [h.strip() for h in header_line.split('|')]
+            
+            # Alignment from separator line (index 1)
+            sep_line = table_buffer[1].strip('|')
+            sep_cells = [s.strip() for s in sep_line.split('|')]
+            alignments = []
+            for s in sep_cells:
+                if s.startswith(':') and s.endswith(':'):
+                    alignments.append('center')
+                elif s.endswith(':'):
+                    alignments.append('right')
+                else:
+                    alignments.append('left')
+
             table_html.append('<thead><tr>')
-            for h in headers:
-                table_html.append(f'<th>{self._parse_inline(h)}</th>')
+            for i, h in enumerate(headers):
+                align = alignments[i] if i < len(alignments) else 'left'
+                table_html.append(f'<th style="text-align:{align}">{self._parse_inline(h)}</th>')
             table_html.append('</tr></thead><tbody>')
 
             # Rows (skip the separator line at index 1)
@@ -52,7 +66,8 @@ class MarkdownConverter:
                 # Use header count to ensure row consistency
                 for i in range(len(headers)):
                     cell_content = cells[i] if i < len(cells) else ''
-                    table_html.append(f'<td>{self._parse_inline(cell_content)}</td>')
+                    align = alignments[i] if i < len(alignments) else 'left'
+                    table_html.append(f'<td style="text-align:{align}">{self._parse_inline(cell_content)}</td>')
                 table_html.append('</tr>')
 
             table_html.append('</tbody></table>')

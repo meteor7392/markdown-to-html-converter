@@ -122,12 +122,17 @@ class TestMarkdownConverter(unittest.TestCase):
 
     def test_tables(self):
         md = "| Header 1 | Header 2 |\n| --- | --- |\n| Cell 1 | Cell 2 |"
-        expected = "<table border=\"1\"><thead><tr><th>Header 1</th><th>Header 2</th></tr></thead><tbody><tr><td>Cell 1</td><td>Cell 2</td></tr></tbody></table>"
+        expected = "<table border=\"1\"><thead><tr><th style=\"text-align:left\">Header 1</th><th style=\"text-align:left\">Header 2</th></tr></thead><tbody><tr><td style=\"text-align:left\">Cell 1</td><td style=\"text-align:left\">Cell 2</td></tr></tbody></table>"
+        self.assertEqual(self.converter.convert(md), expected)
+
+    def test_tables_alignment(self):
+        md = "| Left | Center | Right |\n| :--- | :---: | ---: |\n| L | C | R |"
+        expected = "<table border=\"1\"><thead><tr><th style=\"text-align:left\">Left</th><th style=\"text-align:center\">Center</th><th style=\"text-align:right\">Right</th></tr></thead><tbody><tr><td style=\"text-align:left\">L</td><td style=\"text-align:center\">C</td><td style=\"text-align:right\">R</td></tr></tbody></table>"
         self.assertEqual(self.converter.convert(md), expected)
 
     def test_tables_with_formatting(self):
         md = "| **Bold** | *Italic* |\n| --- | --- |\n| Cell **1** | Cell *2* |"
-        expected = "<table border=\"1\"><thead><tr><th><strong>Bold</strong></th><th><em>Italic</em></th></tr></thead><tbody><tr><td>Cell <strong>1</strong></td><td>Cell <em>2</em></td></tr></tbody></table>"
+        expected = "<table border=\"1\"><thead><tr><th style=\"text-align:left\"><strong>Bold</strong></th><th style=\"text-align:left\"><em>Italic</em></th></tr></thead><tbody><tr><td style=\"text-align:left\">Cell <strong>1</strong></td><td style=\"text-align:left\">Cell <em>2</em></td></tr></tbody></table>"
         self.assertEqual(self.converter.convert(md), expected)
 
     def test_footnotes(self):
