@@ -115,6 +115,11 @@ class TestMarkdownConverter(unittest.TestCase):
         expected = "<table border=\"1\"><thead><tr><th>Header 1</th><th>Header 2</th></tr></thead><tbody><tr><td>Cell 1</td><td>Cell 2</td></tr></tbody></table>"
         self.assertEqual(self.converter.convert(md), expected)
 
+    def test_tables_with_formatting(self):
+        md = "| **Bold** | *Italic* |\n| --- | --- |\n| Cell **1** | Cell *2* |"
+        expected = "<table border=\"1\"><thead><tr><th><strong>Bold</strong></th><th><em>Italic</em></th></tr></thead><tbody><tr><td>Cell <strong>1</strong></td><td>Cell <em>2</em></td></tr></tbody></table>"
+        self.assertEqual(self.converter.convert(md), expected)
+
     def test_footnotes(self):
         md = "This is a claim[^1].\n\n[^1]: This is the footnote content."
         expected = "<p>This is a claim<sup><a href=\"#fn-1\" id=\"cn-1\">1</a></sup>.</p>\n<hr><section class=\"footnotes\"><ol><li id=\"fn-1\">This is the footnote content. <a href=\"#cn-1\">↩</a></li></ol></section>"
