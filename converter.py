@@ -267,8 +267,22 @@ class MarkdownConverter:
 
         # Inline images: ![alt](url)
         text = re.sub(r'!\[(.*?)\]\((.*?)\)', r'<img src="\2" alt="\1">', text)
-        # Inline links: [text](url)
-        text = re.sub(r'\[(.*?)\]\((.*?)\)', r'<a href="\2">\1</a>', text)
+        
+        # Inline links: [text](url 'title') or [text](url)
+        def replace_link(match):
+            text_content = match.group(1)
+            url_part = match.group(2)
+            # Split url and title if present. title is usually enclosed in quotes
+            # Basic support for 'title' or "title"
+            title_match = re.search(r'\s+["\'](.*?)["\']$', url_part)
+            if title_match:
+                url = url_part[:title_match.start()].strip()
+                title = title_match.group(1)
+                return f'<a href="{url}" title="{title}">{text_content}</a>'
+            else:
+                return f'<a href="{url_part}">{text_content}</a>'
+
+        text = re.sub(r'\[(.*?)\]\((.*?)\)', replace_link, text)
         
         # Restore inline code
         for i, code in enumerate(code_blocks):
