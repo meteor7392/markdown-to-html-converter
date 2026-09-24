@@ -11,7 +11,7 @@ class MarkdownConverter:
         lines = text.split('\n')
         html_output = []
         in_list = False
-        list_type = None  # 'ul' or 'ol'
+        list_stack = [] # Stack to track nesting levels: (indent, type)
         in_blockquote = False
         in_code_block = False
         code_buffer = []
@@ -78,9 +78,10 @@ class MarkdownConverter:
             if not in_code_block and (line.startswith('    ') or line.startswith('\t')):
                 flush_table()
                 if in_list:
-                    html_output.append(f'</{list_type}>')
+                    while list_stack:
+                        html_output.append(f'</{list_stack[-1][1]}>')
+                        list_stack.pop()
                     in_list = False
-                    list_type = None
                 if in_blockquote:
                     html_output.append('</blockquote>')
                     in_blockquote = False
@@ -135,34 +136,45 @@ class MarkdownConverter:
                     html_output.append('</blockquote>')
                     in_blockquote = False
 
-            # Handle unordered lists
-            if re.match(r'^\s*- ', line):
-                if not in_list or list_type != 'ul':
-                    if in_list:
-                        html_output.append(f'</{list_type}>')
-                    html_output.append('<ul>')
-                    in_list = True
-                    list_type = 'ul'
-                content = re.sub(r'^\s*- ', '', line)
-                html_output.append(f'<li>{self._parse_inline(content)}</li>')
-                continue
+            # Handle lists (including nested)
+            ul_match = re.match(r'^(\s*)- ', line)
+            ol_match = re.match(r'^(\s*)\d+\.\s', line)
             
-            # Handle ordered lists
-            elif re.match(r'^\s*\d+\.\s', line):
-                if not in_list or list_type != 'ol':
-                    if in_list:
-                        html_output.append(f'</{list_type}>')
-                    html_output.append('<ol>')
+            if ul_match or ol_match:
+                indent = len(ul_match.group(1)) if ul_match else len(ol_match.group(1))
+                current_type = 'ul' if ul_match else 'ol'
+                content = re.sub(r'^\s*(- |\d+\.\s)', '', line)
+
+                if not in_list:
                     in_list = True
-                    list_type = 'ol'
-                content = re.sub(r'^\s*\d+\.\s', '', line)
+                    html_output.append(f'<{current_type}>')
+                    list_stack.append((indent, current_type))
+                else:
+                    # Check for nesting
+                    if indent > (list_stack[-1][0] if list_stack else -1):
+                        html_output.append(f'<{current_type}>')
+                        list_stack.append((indent, current_type))
+                    elif indent < (list_stack[-1][0] if list_stack else -1):
+                        while list_stack and indent < list_stack[-1][0]:
+                            html_output.append(f'</{list_stack[-1][1]}>')
+                            list_stack.pop()
+                        if not list_stack or indent != list_stack[-1][0]:
+                            html_output.append(f'<{current_type}>')
+                            list_stack.append((indent, current_type))
+                    elif current_type != list_stack[-1][1]:
+                        # Transition from UL to OL or vice versa at same level
+                        html_output.append(f'</{list_stack[-1][1]}>')
+                        html_output.append(f'<{current_type}>')
+                        list_stack[-1] = (indent, current_type)
+                
                 html_output.append(f'<li>{self._parse_inline(content)}</li>')
                 continue
             else:
                 if in_list:
-                    html_output.append(f'</{list_type}>')
+                    while list_stack:
+                        html_output.append(f'</{list_stack[-1][1]}>')
+                        list_stack.pop()
                     in_list = False
-                    list_type = None
 
             # Handle horizontal rules (Allow spaces between characters)
             if re.match(r'^\s*([-*_])(\s*\1){2,}\s*$', line):
@@ -202,8 +214,9 @@ class MarkdownConverter:
                 html_output.append(f'<p>{self._parse_inline(line)}</p>')
 
         flush_table()
-        if in_list:
-            html_output.append(f'</{list_type}>')
+        while list_stack:
+            html_output.append(f'</{list_stack[-1][1]}>')
+            list_stack.pop()
         if in_blockquote:
             html_output.append('</blockquote>')
         if in_code_block:

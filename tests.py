@@ -30,6 +30,16 @@ class TestMarkdownConverter(unittest.TestCase):
         expected = "<ol>\n<li>First</li>\n<li>Second</li>\n</ol>"
         self.assertEqual(self.converter.convert(md), expected)
 
+    def test_nested_lists(self):
+        md = "- Parent\n  - Child 1\n  - Child 2\n    - Grandchild\n- Parent 2"
+        expected = "<ul>\n<li>Parent</li>\n<ul>\n<li>Child 1</li>\n<li>Child 2</li>\n<ul>\n<li>Grandchild</li>\n</ul>\n</ul>\n<li>Parent 2</li>\n</ul>"
+        self.assertEqual(self.converter.convert(md), expected)
+
+    def test_mixed_nested_lists(self):
+        md = "1. Step 1\n   - Detail A\n   - Detail B\n2. Step 2"
+        expected = "<ol>\n<li>Step 1</li>\n<ul>\n<li>Detail A</li>\n<li>Detail B</li>\n</ul>\n<li>Step 2</li>\n</ol>"
+        self.assertEqual(self.converter.convert(md), expected)
+
     def test_blockquotes(self):
         md = "> Quote"
         self.assertEqual(self.converter.convert(md), "<blockquote>\n<p>Quote</p></blockquote>")
