@@ -164,8 +164,8 @@ class MarkdownConverter:
                     in_list = False
                     list_type = None
 
-            # Handle horizontal rules
-            if line.strip() == '---' or line.strip() == '***' or line.strip() == '___':
+            # Handle horizontal rules (Allow spaces between characters)
+            if re.match(r'^\s*([-*_])(\s*\1){2,}\s*$', line):
                 html_output.append('<hr>')
                 continue
 
