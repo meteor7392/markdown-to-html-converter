@@ -104,7 +104,8 @@ class MarkdownConverter:
                     in_blockquote = False
 
             # Handle unordered lists
-            if line.startswith('- ') or (in_list and list_type == 'ul' and line.startswith('  - ')):
+            # Supports both top-level '- ' and indented '  - '
+            if re.match(r'^\s*- ', line):
                 if not in_list or list_type != 'ul':
                     if in_list:
                         html_output.append(f'</{list_type}>')
@@ -116,7 +117,8 @@ class MarkdownConverter:
                 continue
             
             # Handle ordered lists
-            elif re.match(r'\d+\.\s', line) or (in_list and list_type == 'ol' and re.search(r'\s+\d+\.\s', line)):
+            # Supports both top-level '1. ' and indented '  1. '
+            elif re.match(r'^\s*\d+\.\s', line):
                 if not in_list or list_type != 'ol':
                     if in_list:
                         html_output.append(f'</{list_type}>')
@@ -165,7 +167,7 @@ class MarkdownConverter:
                 processed = True
             
             if not processed:
-                if line.strip() == '':
+                if not line.strip():
                     continue
                 html_output.append(f'<p>{self._parse_inline(line)}</p>')
 
