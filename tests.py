@@ -50,6 +50,11 @@ class TestMarkdownConverter(unittest.TestCase):
         md = "```\nprint('hello')\n```"
         self.assertEqual(self.converter.convert(md), "<pre><code>print('hello')</code></pre>")
 
+    def test_indented_code(self):
+        md = "Some text\n\n    indented code\n    more code\n\nBack to text"
+        expected = "<p>Some text</p>\n<pre><code>indented code\nmore code</code></pre>\n<p>Back to text</p>"
+        self.assertEqual(self.converter.convert(md), expected)
+
     def test_horizontal_rule(self):
         self.assertEqual(self.converter.convert('---'), '<hr>')
         self.assertEqual(self.converter.convert('***'), '<hr>')

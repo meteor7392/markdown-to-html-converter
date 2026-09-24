@@ -74,7 +74,42 @@ class MarkdownConverter:
                     in_code_block = False
                 continue
             
+            # Handle indented code blocks (4 spaces or 1 tab)
+            if not in_code_block and (line.startswith('    ') or line.startswith('\t')):
+                flush_table()
+                if in_list:
+                    html_output.append(f'</{list_type}>')
+                    in_list = False
+                    list_type = None
+                if in_blockquote:
+                    html_output.append('</blockquote>')
+                    in_blockquote = False
+                
+                in_code_block = True
+                code_buffer = []
+                content = line[4:] if line.startswith('    ') else line[1:]
+                code_buffer.append(html.escape(content))
+                continue
+            elif in_code_block and not line.startswith('```') and (line.startswith('    ') or line.startswith('\t') or not line.strip()):
+                if line.strip():
+                    content = line[4:] if line.startswith('    ') else line[1:]
+                    code_buffer.append(html.escape(content))
+                else:
+                    code_buffer.append('')
+                continue
+            elif in_code_block:
+                # End of indented code block
+                html_output.append('<pre><code>')
+                html_output.append('\n'.join(code_buffer))
+                html_output.append('</code></pre>')
+                in_code_block = False
+                # We need to process this line as a normal line
+                # To avoid complex loop control, we'll handle it by not 'continuing'
+                # and letting it fall through to the rest of the logic
+                pass
+
             if in_code_block:
+                # This is for fenced blocks
                 code_buffer.append(html.escape(line))
                 continue
 
@@ -104,7 +139,6 @@ class MarkdownConverter:
                     in_blockquote = False
 
             # Handle unordered lists
-            # Supports both top-level '- ' and indented '  - '
             if re.match(r'^\s*- ', line):
                 if not in_list or list_type != 'ul':
                     if in_list:
@@ -117,7 +151,6 @@ class MarkdownConverter:
                 continue
             
             # Handle ordered lists
-            # Supports both top-level '1. ' and indented '  1. '
             elif re.match(r'^\s*\d+\.\s', line):
                 if not in_list or list_type != 'ol':
                     if in_list:
