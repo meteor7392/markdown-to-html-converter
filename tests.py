@@ -105,5 +105,10 @@ class TestMarkdownConverter(unittest.TestCase):
         self.assertEqual(self.converter.convert('Escaped \\ backslash'), '<p>Escaped \ backslash</p>')
         self.assertEqual(self.converter.convert('Mixed \*bold\* and **real bold**'), '<p>Mixed *bold* and <strong>real bold</strong></p>')
 
+    def test_tables(self):
+        md = "| Header 1 | Header 2 |\n| --- | --- |\n| Cell 1 | Cell 2 |"
+        expected = "<table><thead><tr><th>Header 1</th><th>Header 2</th></tr></thead><tbody><tr><td>Cell 1</td><td>Cell 2</td></tr></tbody></table>"
+        self.assertEqual(self.converter.convert(md), expected)
+
 if __name__ == '__main__':
     unittest.main()

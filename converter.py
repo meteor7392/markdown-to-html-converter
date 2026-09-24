@@ -15,10 +15,53 @@ class MarkdownConverter:
         in_blockquote = False
         in_code_block = False
         code_buffer = []
+        in_table = False
+        table_buffer = []
+
+        def flush_table():
+            nonlocal in_table, table_buffer
+            if not in_table:
+                return
+            
+            if len(table_buffer) < 2:
+                # Not a valid table (needs header and separator)
+                for line in table_buffer:
+                    html_output.append(f'<p>{self._parse_inline(line)}</p>')
+                table_buffer = []
+                in_table = False
+                return
+
+            # Process table lines
+            table_html = ['<table>']
+            
+            # Header
+            header_line = table_buffer[0].strip('|')
+            headers = [h.strip() for h in header_line.split('|')]
+            table_html.append('<thead><tr>')
+            for h in headers:
+                table_html.append(f'<th>{self._parse_inline(h)}</th>')
+            table_html.append('</tr></thead><tbody>')
+
+            # Rows (skip the separator line at index 1)
+            for line in table_buffer[2:]:
+                row_line = line.strip('|')
+                cells = [c.strip() for c in row_line.split('|')]
+                table_html.append('<tr>')
+                # Use header count to ensure row consistency
+                for i in range(len(headers)):
+                    cell_content = cells[i] if i < len(cells) else ''
+                    table_html.append(f'<td>{self._parse_inline(cell_content)}</td>')
+                table_html.append('</tr>')
+
+            table_html.append('</tbody></table>')
+            html_output.append(''.join(table_html))
+            table_buffer = []
+            in_table = False
 
         for line in lines:
             # Handle fenced code blocks
             if line.startswith('```'):
+                flush_table()
                 if not in_code_block:
                     in_code_block = True
                     code_buffer = []
@@ -32,6 +75,17 @@ class MarkdownConverter:
             if in_code_block:
                 code_buffer.append(html.escape(line))
                 continue
+
+            # Handle tables
+            if '|' in line:
+                if not in_table:
+                    in_table = True
+                    table_buffer = [line]
+                else:
+                    table_buffer.append(line)
+                continue
+            else:
+                flush_table()
 
             # Handle blockquotes
             if line.startswith('> '):
@@ -107,6 +161,7 @@ class MarkdownConverter:
                     continue
                 html_output.append(f'<p>{self._parse_inline(line)}</p>')
 
+        flush_table()
         if in_list:
             html_output.append(f'</{list_type}>')
         if in_blockquote:
