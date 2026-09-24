@@ -61,6 +61,7 @@ class MarkdownConverter:
             # Rows (skip the separator line at index 1)
             for line in table_buffer[2:]:
                 row_line = line.strip('|')
+                if not row_line: continue
                 cells = [c.strip() for c in row_line.split('|')]
                 table_html.append('<tr>')
                 # Use header count to ensure row consistency
