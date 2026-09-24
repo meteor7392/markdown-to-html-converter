@@ -17,6 +17,8 @@ class MarkdownConverter:
         code_buffer = []
         in_table = False
         table_buffer = []
+        
+        footnotes = []
 
         def flush_table():
             nonlocal in_table, table_buffer
@@ -135,6 +137,12 @@ class MarkdownConverter:
                 html_output.append('<hr>')
                 continue
 
+            # Handle footnote definitions
+            fn_match = re.match(r'^\s*\[\^([^]]+)\]:\s*(.*)', line)
+            if fn_match:
+                footnotes.append((fn_match.group(1), fn_match.group(2)))
+                continue
+
             # Handle headers and blocks
             processed = False
             if line.startswith('# '):
@@ -171,6 +179,13 @@ class MarkdownConverter:
             html_output.append('\n'.join(code_buffer))
             html_output.append('</code></pre>')
 
+        # Process footnotes at the end of the document
+        if footnotes:
+            html_output.append('<hr><section class="footnotes"><ol>')
+            for id, content in footnotes:
+                html_output.append(f'<li id="fn-{id}">{self._parse_inline(content)} <a href="#cn-{id}">↩</a></li>')
+            html_output.append('</ol></section>')
+
         return '\n'.join(html_output)
 
     def _parse_inline(self, text):
@@ -181,6 +196,9 @@ class MarkdownConverter:
         text = re.sub(r'\[ \] ', r'<input type="checkbox" disabled> ', text)
         text = re.sub(r'\[x\] ', r'<input type="checkbox" checked disabled> ', text)
         text = re.sub(r'\[X\] ', r'<input type="checkbox" checked disabled> ', text)
+
+        # Footnote references: [^1]
+        text = re.sub(r'\[\^([^]]+)\]', r'<sup><a href="#fn-\1" id="cn-\1">\1</a></sup>', text)
 
         # Handle escaping by storing escaped characters
         escapes = []
