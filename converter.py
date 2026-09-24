@@ -284,13 +284,12 @@ class MarkdownConverter:
         # Inline links: [text](url 'title') or [text](url)
         def replace_link(match):
             text_content = match.group(1)
-            url_part = match.group(2)
-            # Split url and title if present. title is usually enclosed in quotes
-            # Basic support for 'title' or "title"
-            title_match = re.search(r'\s+["\'](.*?)["\']$', url_part)
+            url_part = match.group(2).strip()
+            # Better title matching: search for quoted string at the end of the URL part
+            title_match = re.search(r'\s+(["\'])(.*?)\1$', url_part)
             if title_match:
                 url = url_part[:title_match.start()].strip()
-                title = title_match.group(1)
+                title = title_match.group(2)
                 return f'<a href="{url}" title="{title}">{text_content}</a>'
             else:
                 return f'<a href="{url_part}">{text_content}</a>'
