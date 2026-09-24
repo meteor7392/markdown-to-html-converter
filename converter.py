@@ -34,7 +34,7 @@ class MarkdownConverter:
                 return
 
             # Process table lines
-            table_html = ['<table>']
+            table_html = ['<table border="1">']
             
             # Header
             header_line = table_buffer[0].strip('|')
@@ -103,9 +103,6 @@ class MarkdownConverter:
                 html_output.append('\n'.join(code_buffer))
                 html_output.append('</code></pre>')
                 in_code_block = False
-                # We need to process this line as a normal line
-                # To avoid complex loop control, we'll handle it by not 'continuing'
-                # and letting it fall through to the rest of the logic
                 pass
 
             if in_code_block:
