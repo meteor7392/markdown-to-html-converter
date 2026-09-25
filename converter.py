@@ -13,7 +13,11 @@ class MarkdownConverter:
         id_text = text.lower()
         id_text = re.sub(r'\s+', '-', id_text)
         id_text = re.sub(r'[^a-z0-9-]', '', id_text)
-        return id_text.strip('-')
+        id_text = id_text.strip('-')
+        # Fallback for empty IDs (e.g., header is just "!!!")
+        if not id_text:
+            id_text = "section"
+        return id_text
 
     def convert(self, text):
         lines = text.split('\n')
@@ -230,9 +234,11 @@ class MarkdownConverter:
                     continue
                 elif next_line and re.match(r'^\s*(-+)\s*$', next_line):
                     # Check if it's a horizontal rule instead of a header
-                    # In simple markdown, a line of --- after a blank line is an HR.
-                    # If it's immediately after text, it's an H2.
-                    if line.strip():
+                    # If the line before it is empty, it's a horizontal rule
+                    if idx > 0 and not lines[idx-1].strip():
+                        # Treat as potential HR, but wait until HR check below
+                        pass
+                    elif line.strip():
                         header_text = line
                         header_id = self._generate_id(header_text)
                         html_output.append(f'<h2 id="{header_id}">{self._parse_inline(header_text)}</h2>')
