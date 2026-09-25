@@ -308,8 +308,19 @@ class MarkdownConverter:
         # Strike-through
         text = re.sub(r'~~(.*?)~~', r'<s>\1</s>', text)
 
-        # Inline images: ![alt](url)
-        text = re.sub(r'!\[(.*?)\]\((.*?)\)', r'<img src="\2" alt="\1">', text)
+        # Inline images: ![alt](url 'title') or ![alt](url)
+        def replace_image(match):
+            alt_text = match.group(1)
+            url_part = match.group(2).strip()
+            title_match = re.search(r'\s+(["\'])(.*?)\1$', url_part)
+            if title_match:
+                url = url_part[:title_match.start()].strip()
+                title = title_match.group(2)
+                return f'<img src="{url}" alt="{alt_text}" title="{title}">'
+            else:
+                return f'<img src="{url_part}" alt="{alt_text}">'
+
+        text = re.sub(r'!\[(.*?)\]\((.*?)\)', replace_image, text)
         
         # Inline links: [text](url 'title') or [text](url)
         def replace_link(match):
