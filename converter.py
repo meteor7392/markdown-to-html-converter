@@ -76,7 +76,10 @@ class MarkdownConverter:
             table_buffer = []
             in_table = False
 
-        for line in lines:
+        idx = 0
+        while idx < len(lines):
+            line = lines[idx]
+            
             # Handle fenced code blocks
             if line.startswith('```'):
                 flush_table()
@@ -88,6 +91,7 @@ class MarkdownConverter:
                     html_output.append('\n'.join(code_buffer))
                     html_output.append('</code></pre>')
                     in_code_block = False
+                idx += 1
                 continue
             
             # Handle indented code blocks (4 spaces or 1 tab)
@@ -106,6 +110,7 @@ class MarkdownConverter:
                 code_buffer = []
                 content = line[4:] if line.startswith('    ') else line[1:]
                 code_buffer.append(html.escape(content))
+                idx += 1
                 continue
             elif in_code_block and not line.startswith('```') and (line.startswith('    ') or line.startswith('\t') or not line.strip()):
                 if line.strip():
@@ -113,6 +118,7 @@ class MarkdownConverter:
                     code_buffer.append(html.escape(content))
                 else:
                     code_buffer.append('')
+                idx += 1
                 continue
             elif in_code_block:
                 # End of indented code block
@@ -120,11 +126,13 @@ class MarkdownConverter:
                 html_output.append('\n'.join(code_buffer))
                 html_output.append('</code></pre>')
                 in_code_block = False
-                pass
+                # We don't increment idx here so this line can be processed as other markdown
+                continue
 
             if in_code_block:
                 # This is for fenced blocks
                 code_buffer.append(html.escape(line))
+                idx += 1
                 continue
 
             # Handle tables
@@ -134,6 +142,7 @@ class MarkdownConverter:
                     table_buffer = [line]
                 else:
                     table_buffer.append(line)
+                idx += 1
                 continue
             else:
                 flush_table()
@@ -146,6 +155,7 @@ class MarkdownConverter:
                 
                 content = line[2:]
                 html_output.append(f'<p>{self._parse_inline(content)}</p>')
+                idx += 1
                 continue
             else:
                 if in_blockquote:
@@ -184,6 +194,7 @@ class MarkdownConverter:
                         list_stack[-1] = (indent, current_type)
                 
                 html_output.append(f'<li>{self._parse_inline(content)}</li>')
+                idx += 1
                 continue
             else:
                 if in_list:
@@ -192,15 +203,33 @@ class MarkdownConverter:
                         list_stack.pop()
                     in_list = False
 
-            # Handle horizontal rules (Allow spaces between characters)
+            # Handle Setext-style headers
+            if idx + 1 < len(lines):
+                next_line = lines[idx + 1]
+                if next_line and re.match(r'^\s*(=+)\s*$', next_line):
+                    html_output.append(f'<h1>{self._parse_inline(line)}</h1>')
+                    idx += 2
+                    continue
+                elif next_line and re.match(r'^\s*(-+)\s*$', next_line):
+                    # Check if it's a horizontal rule instead of a header
+                    # In simple markdown, a line of --- after a blank line is an HR.
+                    # If it's immediately after text, it's an H2.
+                    if line.strip():
+                        html_output.append(f'<h2>{self._parse_inline(line)}</h2>')
+                        idx += 2
+                        continue
+
+            # Handle horizontal rules
             if re.match(r'^\s*([-*_=])(\s*\1){2,}\s*$', line):
                 html_output.append('<hr>')
+                idx += 1
                 continue
 
             # Handle footnote definitions
             fn_match = re.match(r'^\s*\[\^([^]]+)\]:\s*(.*)', line)
             if fn_match:
                 footnotes.append((fn_match.group(1), fn_match.group(2)))
+                idx += 1
                 continue
 
             # Handle headers and blocks
@@ -226,8 +255,11 @@ class MarkdownConverter:
             
             if not processed:
                 if not line.strip():
+                    idx += 1
                     continue
                 html_output.append(f'<p>{self._parse_inline(line)}</p>')
+            
+            idx += 1
 
         flush_table()
         while list_stack:
