@@ -3,7 +3,7 @@
 A lightweight Python library to convert basic Markdown syntax into HTML5.
 
 ## Features
-- Headers (H1, H2, H3)
+- Headers (H1-H6)
 - Bold and Italic text
 - Unordered and Ordered lists
 - Blockquotes
@@ -11,6 +11,9 @@ A lightweight Python library to convert basic Markdown syntax into HTML5.
 - Links and Images
 - Horizontal Rules
 - Paragraph handling
+- Tables with alignment
+- Footnotes
+- Task lists
 
 ## Usage
 ```python

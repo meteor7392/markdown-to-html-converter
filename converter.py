@@ -193,7 +193,7 @@ class MarkdownConverter:
                     in_list = False
 
             # Handle horizontal rules (Allow spaces between characters)
-            if re.match(r'^\s*([-*_])(\s*\1){2,}\s*$', line):
+            if re.match(r'^\s*([-*_=])(\s*\1){2,}\s*$', line):
                 html_output.append('<hr>')
                 continue
 
