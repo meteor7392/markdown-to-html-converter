@@ -253,6 +253,20 @@ class MarkdownConverter:
         # First, escape HTML special characters to prevent XSS
         text = html.escape(text)
 
+        # Support for inline HTML: allow specific safe tags (e.g., <span>, <div>, <br>)
+        # This replaces escaped versions of these tags back to original HTML
+        # Note: In a real library, a whitelist of tags and attributes would be used
+        safe_html_pattern = r'&lt;(/?[a-zA-Z0-9]+)([^&gt;]*)&gt;'
+        def restore_html(match):
+            tag = match.group(1)
+            attrs = match.group(2)
+            # Basic check to ensure we aren't restoring scripts or styles
+            if tag.lower() in ['script', 'style', 'iframe', 'object', 'embed']:
+                return match.group(0)
+            return f'<{tag}{attrs}>'
+        
+        text = re.sub(safe_html_pattern, restore_html, text)
+
         # Task lists support (checkboxes)
         text = re.sub(r'\[ \] ', r'<input type="checkbox" disabled> ', text)
         text = re.sub(r'\[x\] ', r'<input type="checkbox" checked disabled> ', text)
