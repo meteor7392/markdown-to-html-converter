@@ -140,5 +140,10 @@ class TestMarkdownConverter(unittest.TestCase):
         expected = "<p>This is a claim<sup><a href=\"#fn-1\" id=\"cn-1\">1</a></sup>.</p>\n<hr><section class=\"footnotes\"><ol><li id=\"fn-1\">This is the footnote content. <a href=\"#cn-1\">↩</a></li></ol></section>"
         self.assertEqual(self.converter.convert(md), expected)
 
+    def test_multiple_footnotes(self):
+        md = "First[^1] and second[^2].\n\n[^1]: Footnote 1\n[^2]: Footnote 2"
+        expected = "<p>First<sup><a href=\"#fn-1\" id=\"cn-1\">1</a></sup> and second<sup><a href=\"#fn-2\" id=\"cn-2\">2</a></sup>.</p>\n<hr><section class=\"footnotes\"><ol><li id=\"fn-1\">Footnote 1 <a href=\"#cn-1\">↩</a></li><li id=\"fn-2\">Footnote 2 <a href=\"#cn-2\">↩</a></li></ol></section>"
+        self.assertEqual(self.converter.convert(md), expected)
+
 if __name__ == '__main__':
     unittest.main()
