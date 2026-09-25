@@ -7,6 +7,14 @@ class MarkdownConverter:
     def __init__(self):
         pass
 
+    def _generate_id(self, text):
+        """Generate a URL-friendly ID from header text."""
+        # Convert to lowercase, replace spaces with hyphens, remove non-alphanumeric characters
+        id_text = text.lower()
+        id_text = re.sub(r'\s+', '-', id_text)
+        id_text = re.sub(r'[^a-z0-9-]', '', id_text)
+        return id_text.strip('-')
+
     def convert(self, text):
         lines = text.split('\n')
         html_output = []
@@ -215,7 +223,9 @@ class MarkdownConverter:
             if idx + 1 < len(lines):
                 next_line = lines[idx + 1]
                 if next_line and re.match(r'^\s*(=+)\s*$', next_line):
-                    html_output.append(f'<h1>{self._parse_inline(line)}</h1>')
+                    header_text = line
+                    header_id = self._generate_id(header_text)
+                    html_output.append(f'<h1 id="{header_id}">{self._parse_inline(header_text)}</h1>')
                     idx += 2
                     continue
                 elif next_line and re.match(r'^\s*(-+)\s*$', next_line):
@@ -223,7 +233,9 @@ class MarkdownConverter:
                     # In simple markdown, a line of --- after a blank line is an HR.
                     # If it's immediately after text, it's an H2.
                     if line.strip():
-                        html_output.append(f'<h2>{self._parse_inline(line)}</h2>')
+                        header_text = line
+                        header_id = self._generate_id(header_text)
+                        html_output.append(f'<h2 id="{header_id}">{self._parse_inline(header_text)}</h2>')
                         idx += 2
                         continue
 
@@ -243,22 +255,28 @@ class MarkdownConverter:
             # Handle headers and blocks
             processed = False
             if line.startswith('# '):
-                html_output.append(f'<h1>{self._parse_inline(line[2:])}</h1>')
+                content = line[2:]
+                html_output.append(f'<h1 id="{self._generate_id(content)}">{self._parse_inline(content)}</h1>')
                 processed = True
             elif line.startswith('## '):
-                html_output.append(f'<h2>{self._parse_inline(line[3:])}</h2>')
+                content = line[3:]
+                html_output.append(f'<h2 id="{self._generate_id(content)}">{self._parse_inline(content)}</h2>')
                 processed = True
             elif line.startswith('### '):
-                html_output.append(f'<h3>{self._parse_inline(line[4:])}</h3>')
+                content = line[4:]
+                html_output.append(f'<h3 id="{self._generate_id(content)}">{self._parse_inline(content)}</h3>')
                 processed = True
             elif line.startswith('#### '):
-                html_output.append(f'<h4>{self._parse_inline(line[5:])}</h4>')
+                content = line[5:]
+                html_output.append(f'<h4 id="{self._generate_id(content)}">{self._parse_inline(content)}</h4>')
                 processed = True
             elif line.startswith('##### '):
-                html_output.append(f'<h5>{self._parse_inline(line[6:])}</h5>')
+                content = line[6:]
+                html_output.append(f'<h5 id="{self._generate_id(content)}">{self._parse_inline(content)}</h5>')
                 processed = True
             elif line.startswith('###### '):
-                html_output.append(f'<h6>{self._parse_inline(line[7:])}</h6>')
+                content = line[7:]
+                html_output.append(f'<h6 id="{self._generate_id(content)}">{self._parse_inline(content)}</h6>')
                 processed = True
             
             if not processed:
