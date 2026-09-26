@@ -40,7 +40,8 @@ class MarkdownConverter:
             if len(table_buffer) < 2:
                 # Not a valid table (needs header and separator)
                 for line in table_buffer:
-                    html_output.append(f'<p>{self._parse_inline(line)}</p>')
+                    if line.strip():
+                        html_output.append(f'<p>{self._parse_inline(line)}</p>')
                 table_buffer = []
                 in_table = False
                 return
@@ -165,6 +166,9 @@ class MarkdownConverter:
                 idx += 1
                 continue
             else:
+                # If we were in a table but current line is empty, we might still be in a table 
+                # but GFM typically ends tables on the first non-table, non-empty line.
+                # However, for simplicity and to match common behavior, empty lines break tables here.
                 flush_table()
 
             # Handle blockquotes
