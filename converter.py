@@ -166,9 +166,6 @@ class MarkdownConverter:
                 idx += 1
                 continue
             else:
-                # If we were in a table but current line is empty, we might still be in a table 
-                # but GFM typically ends tables on the first non-table, non-empty line.
-                # However, for simplicity and to match common behavior, empty lines break tables here.
                 flush_table()
 
             # Handle blockquotes
@@ -179,6 +176,19 @@ class MarkdownConverter:
                 
                 content = line[2:]
                 html_output.append(f'<p>{self._parse_inline(content)}</p>')
+                idx += 1
+                continue
+            elif line.startswith('>'):
+                # Handle blockquote with empty content or just '>'
+                if not in_blockquote:
+                    html_output.append('<blockquote>')
+                    in_blockquote = True
+                
+                content = line[1:].strip()
+                if content:
+                    html_output.append(f'<p>{self._parse_inline(content)}</p>')
+                else:
+                    html_output.append('<p></p>')
                 idx += 1
                 continue
             else:
@@ -238,9 +248,7 @@ class MarkdownConverter:
                     continue
                 elif next_line and re.match(r'^\s*(-+)\s*$', next_line):
                     # Check if it's a horizontal rule instead of a header
-                    # If the line before it is empty, it's a horizontal rule
                     if idx > 0 and not lines[idx-1].strip():
-                        # Treat as potential HR, but wait until HR check below
                         pass
                     elif line.strip():
                         header_text = line
@@ -249,7 +257,7 @@ class MarkdownConverter:
                         idx += 2
                         continue
 
-            # Handle horizontal rules
+            # Handle horizontal rules - improved regex to be more robust
             if re.match(r'^\s*([-*_=])(\s*\1){2,}\s*$', line):
                 html_output.append('<hr>')
                 idx += 1

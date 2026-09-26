@@ -44,6 +44,11 @@ class TestMarkdownConverter(unittest.TestCase):
         md = "> Quote"
         self.assertEqual(self.converter.convert(md), "<blockquote>\n<p>Quote</p></blockquote>")
 
+    def test_blockquotes_empty_lines(self):
+        md = "> Line 1\n>\n> Line 2"
+        expected = "<blockquote>\n<p>Line 1</p>\n<p></p>\n<p>Line 2</p></blockquote>"
+        self.assertEqual(self.converter.convert(md), expected)
+
     def test_paragraphs(self):
         self.assertEqual(self.converter.convert('Plain text'), '<p>Plain text</p>')
 
