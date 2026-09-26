@@ -6,12 +6,12 @@ class TestMarkdownConverter(unittest.TestCase):
         self.converter = MarkdownConverter()
 
     def test_headers(self):
-        self.assertEqual(self.converter.convert('# Hello'), '<h1>Hello</h1>')
-        self.assertEqual(self.converter.convert('## Subtitle'), '<h2>Subtitle</h2>')
-        self.assertEqual(self.converter.convert('### Section'), '<h3>Section</h3>')
-        self.assertEqual(self.converter.convert('#### Sub'), '<h4>Sub</h4>')
-        self.assertEqual(self.converter.convert('##### Sub'), '<h5>Sub</h5>')
-        self.assertEqual(self.converter.convert('###### Sub'), '<h6>Sub</h6>')
+        self.assertEqual(self.converter.convert('# Hello'), '<h1 id="hello">Hello</h1>')
+        self.assertEqual(self.converter.convert('## Subtitle'), '<h2 id="subtitle">Subtitle</h2>')
+        self.assertEqual(self.converter.convert('### Section'), '<h3 id="section">Section</h3>')
+        self.assertEqual(self.converter.convert('#### Sub'), '<h4 id="sub">Sub</h4>')
+        self.assertEqual(self.converter.convert('##### Sub'), '<h5 id="sub">Sub</h5>')
+        self.assertEqual(self.converter.convert('###### Sub'), '<h6 id="sub">Sub</h6>')
 
     def test_bold_italic(self):
         self.assertEqual(self.converter.convert('This is **bold**'), '<p>This is <strong>bold</strong></p>')
@@ -77,7 +77,7 @@ class TestMarkdownConverter(unittest.TestCase):
 
 - List 1
 - List 2"
-        expected = "<h1>Title</h1>\n<p>This is <strong>bold</strong> and <a href=\"url\">a link</a>.</p>\n<ul>\n<li>List 1</li>\n<li>List 2</li>\n</ul>"
+        expected = "<h1 id="title">Title</h1>\n<p>This is <strong>bold</strong> and <a href=\"url\">a link</a>.</p>\n<ul>\n<li>List 1</li>\n<li>List 2</li>\n</ul>"
         self.assertEqual(self.converter.convert(md), expected)
 
     def test_html_escaping(self):
