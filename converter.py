@@ -21,6 +21,18 @@ class MarkdownConverter:
 
     def convert(self, text):
         lines = text.split('\n')
+        
+        # Pass 1: Collect all reference-style link definitions
+        references = {}
+        for line in lines:
+            ref_match = re.match(r'^\s*\[([^\s\]]+)\]:\s*(\S+)(?:\s+["\'](.*?)["\'])?$', line)
+            if ref_match:
+                ref_id = ref_match.group(1)
+                url = ref_match.group(2)
+                title = ref_match.group(3) or ''
+                references[ref_id] = (url, title)
+
+        # Pass 2: Convert blocks to HTML
         html_output = []
         in_list = False
         list_stack = [] # Stack to track nesting levels: (indent, type)
@@ -31,7 +43,6 @@ class MarkdownConverter:
         table_buffer = []
         
         footnotes = []
-        references = {}
 
         def flush_table():
             nonlocal in_table, table_buffer
@@ -42,7 +53,7 @@ class MarkdownConverter:
                 # Not a valid table (needs header and separator)
                 for line in table_buffer:
                     if line.strip():
-                        html_output.append(f'<p>{self._parse_inline(line)}</p>')
+                        html_output.append(f'<p>{self._parse_inline(line, references)}</p>')
                 table_buffer = []
                 in_table = False
                 return
@@ -73,7 +84,7 @@ class MarkdownConverter:
             table_html.append('<thead><tr>')
             for i, h in enumerate(headers):
                 align = alignments[i] if i < len(alignments) else 'left'
-                table_html.append(f'<th style="text-align:{align}">{self._parse_inline(h)}</th>')
+                table_html.append(f'<th style="text-align:{align}">{self._parse_inline(h, references)}</th>')
             table_html.append('</tr></thead><tbody>')
 
             # Rows (skip the separator line at index 1)
@@ -90,7 +101,7 @@ class MarkdownConverter:
                 for i in range(len(headers)):
                     cell_content = cells[i] if i < len(cells) else ''
                     align = alignments[i] if i < len(alignments) else 'left'
-                    table_html.append(f'<td style="text-align:{align}">{self._parse_inline(cell_content)}</td>')
+                    table_html.append(f'<td style="text-align:{align}">{self._parse_inline(cell_content, references)}</td>')
                 table_html.append('</tr>')
 
             table_html.append('</tbody></table>')
@@ -176,7 +187,7 @@ class MarkdownConverter:
                     in_blockquote = True
                 
                 content = line[2:]
-                html_output.append(f'<p>{self._parse_inline(content)}</p>')
+                html_output.append(f'<p>{self._parse_inline(content, references)}</p>')
                 idx += 1
                 continue
             elif line.startswith('>'):
@@ -187,7 +198,7 @@ class MarkdownConverter:
                 
                 content = line[1:].strip()
                 if content:
-                    html_output.append(f'<p>{self._parse_inline(content)}</p>')
+                    html_output.append(f'<p>{self._parse_inline(content, references)}</p>')
                 else:
                     html_output.append('<p></p>')
                 idx += 1
@@ -228,7 +239,7 @@ class MarkdownConverter:
                         html_output.append(f'<{current_type}>')
                         list_stack[-1] = (indent, current_type)
                 
-                html_output.append(f'<li>{self._parse_inline(content)}</li>')
+                html_output.append(f'<li>{self._parse_inline(content, references)}</li>')
                 idx += 1
                 continue
             else:
@@ -244,7 +255,7 @@ class MarkdownConverter:
                 if next_line and re.match(r'^\s*(=+)\s*$', next_line):
                     header_text = line
                     header_id = self._generate_id(header_text)
-                    html_output.append(f'<h1 id="{header_id}">{self._parse_inline(header_text)}</h1>')
+                    html_output.append(f'<h1 id="{header_id}">{self._parse_inline(header_text, references)}</h1>')
                     idx += 2
                     continue
                 elif next_line and re.match(r'^\s*(-+)\s*$', next_line):
@@ -254,7 +265,7 @@ class MarkdownConverter:
                     elif line.strip():
                         header_text = line
                         header_id = self._generate_id(header_text)
-                        html_output.append(f'<h2 id="{header_id}">{self._parse_inline(header_text)}</h2>')
+                        html_output.append(f'<h2 id="{header_id}">{self._parse_inline(header_text, references)}</h2>')
                         idx += 2
                         continue
 
@@ -271,13 +282,9 @@ class MarkdownConverter:
                 idx += 1
                 continue
 
-            # Handle reference-style links: [id]: url "title"
+            # Handle reference-style links definitions - skip in pass 2
             ref_match = re.match(r'^\s*\[([^\s\]]+)\]:\s*(\S+)(?:\s+["\'](.*?)["\'])?$', line)
             if ref_match:
-                ref_id = ref_match.group(1)
-                url = ref_match.group(2)
-                title = ref_match.group(3) or ''
-                references[ref_id] = (url, title)
                 idx += 1
                 continue
 
@@ -285,34 +292,34 @@ class MarkdownConverter:
             processed = False
             if line.startswith('# '):
                 content = line[2:]
-                html_output.append(f'<h1 id="{self._generate_id(content)}">{self._parse_inline(content)}</h1>')
+                html_output.append(f'<h1 id="{self._generate_id(content)}">{self._parse_inline(content, references)}</h1>')
                 processed = True
             elif line.startswith('## '):
                 content = line[3:]
-                html_output.append(f'<h2 id="{self._generate_id(content)}">{self._parse_inline(content)}</h2>')
+                html_output.append(f'<h2 id="{self._generate_id(content)}">{self._parse_inline(content, references)}</h2>')
                 processed = True
             elif line.startswith('### '):
                 content = line[4:]
-                html_output.append(f'<h3 id="{self._generate_id(content)}">{self._parse_inline(content)}</h3>')
+                html_output.append(f'<h3 id="{self._generate_id(content)}">{self._parse_inline(content, references)}</h3>')
                 processed = True
             elif line.startswith('#### '):
                 content = line[5:]
-                html_output.append(f'<h4 id="{self._generate_id(content)}">{self._parse_inline(content)}</h4>')
+                html_output.append(f'<h4 id="{self._generate_id(content)}">{self._parse_inline(content, references)}</h4>')
                 processed = True
             elif line.startswith('##### '):
                 content = line[6:]
-                html_output.append(f'<h5 id="{self._generate_id(content)}">{self._parse_inline(content)}</h5>')
+                html_output.append(f'<h5 id="{self._generate_id(content)}">{self._parse_inline(content, references)}</h5>')
                 processed = True
             elif line.startswith('###### '):
                 content = line[7:]
-                html_output.append(f'<h6 id="{self._generate_id(content)}">{self._parse_inline(content)}</h6>')
+                html_output.append(f'<h6 id="{self._generate_id(content)}">{self._parse_inline(content, references)}</h6>')
                 processed = True
             
             if not processed:
                 if not line.strip():
                     idx += 1
                     continue
-                html_output.append(f'<p>{self._parse_inline(line)}</p>')
+                html_output.append(f'<p>{self._parse_inline(line, references)}</p>')
             
             idx += 1
 
@@ -331,31 +338,8 @@ class MarkdownConverter:
         if footnotes:
             html_output.append('<hr><section class="footnotes"><ol>')
             for id, content in footnotes:
-                html_output.append(f'<li id="fn-{id}">{self._parse_inline(content)} <a href="#cn-{id}">↩</a></li>')
+                html_output.append(f'<li id="fn-{id}">{self._parse_inline(content, references)} <a href="#cn-{id}">↩</a></li>')
             html_output.append('</ol></section>')
-
-        # Since _parse_inline is called during the line-by-line pass,
-        # we need a second pass if we want reference links to be resolved 
-        # based on references found anywhere in the document. 
-        # To keep it simple and maintain architecture, we will pass references to _parse_inline.
-        # However, the current design calls _parse_inline on the fly. 
-        # I will modify _parse_inline to accept references as an argument.
-        
-        # To avoid breaking existing call sites, I'll use a private member for references.
-        # But for the current conversion pass, the references are only populated after
-        # the line-by-line loop. 
-        # Fix: I'll perform the conversion in two passes for blocks: 
-        # 1. Extract all references and block types. 
-        # 2. Convert blocks to HTML using the reference map.
-
-        # Correction: I will instead store the results of the first pass and 
-        # then apply the inline parsing with the reference map at the end.
-        # To keep changes concise, I'll modify the logic to: 
-        # 1. First pass: find all reference-style link definitions.
-        # 2. Second pass: convert everything as before, calling _parse_inline with the ref map.
-        
-        # Wait, the current `convert` method already does one pass. 
-        # I will refactor it to separate block parsing from inline parsing.
         
         return '\n'.join(html_output)
 
