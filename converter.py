@@ -61,17 +61,17 @@ class MarkdownConverter:
             # Process table lines
             table_html = ['<table border="1">']
             
-            # Header - handle leading/trailing pipes
-            header_line = table_buffer[0].strip()
-            if header_line.startswith('|'): header_line = header_line[1:]
-            if header_line.endswith('|'): header_line = header_line[:-1]
-            headers = [h.strip() for h in header_line.split('|')]
+            def split_row(row_line):
+                row_line = row_line.strip()
+                if row_line.startswith('|'): row_line = row_line[1:]
+                if row_line.endswith('|'): row_line = row_line[:-1]
+                return [cell.strip() for cell in row_line.split('|')]
+
+            # Header
+            headers = split_row(table_buffer[0])
             
             # Alignment from separator line (index 1)
-            sep_line = table_buffer[1].strip()
-            if sep_line.startswith('|'): sep_line = sep_line[1:]
-            if sep_line.endswith('|'): sep_line = sep_line[:-1]
-            sep_cells = [s.strip() for s in sep_line.split('|')]
+            sep_cells = split_row(table_buffer[1])
             alignments = []
             for s in sep_cells:
                 if s.startswith(':') and s.endswith(':'):
@@ -92,10 +92,8 @@ class MarkdownConverter:
                 row_line = line.strip()
                 if not row_line:
                     continue
-                if row_line.startswith('|'): row_line = row_line[1:]
-                if row_line.endswith('|'): row_line = row_line[:-1]
                 
-                cells = [c.strip() for c in row_line.split('|')]
+                cells = split_row(row_line)
                 table_html.append('<tr>')
                 # Use header count to ensure row consistency
                 for i in range(len(headers)):
