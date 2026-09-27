@@ -379,9 +379,10 @@ class MarkdownConverter:
             return f'__CODE_BLOCK_{len(code_blocks)-1}__'
         text = re.sub(r'`([^`]*)`', save_code, text)
         
+        # Style patterns - handled in order from most specific to least specific
         # Bold-Italic
-        text = re.sub(r'\*\*\*(.*?)\*\*\*', r'<strong><em>\1</em></strong>', text)
-        text = re.sub(r'___(.*?)___', r'<strong><em>\1</em></strong>', text)
+        text = re.sub(r'\*\*\*([^*]+?)\*\*\*', r'<strong><em>\1</em></strong>', text)
+        text = re.sub(r'___([^_]+?)___', r'<strong><em>\1</em></strong>', text)
         # Bold
         text = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', text)
         text = re.sub(r'__(.*?)__', r'<strong>\1</strong>', text)
