@@ -31,6 +31,7 @@ class MarkdownConverter:
         table_buffer = []
         
         footnotes = []
+        references = {}
 
         def flush_table():
             nonlocal in_table, table_buffer
@@ -270,6 +271,16 @@ class MarkdownConverter:
                 idx += 1
                 continue
 
+            # Handle reference-style links: [id]: url "title"
+            ref_match = re.match(r'^\s*\[([^\s\]]+)\]:\s*(\S+)(?:\s+["\'](.*?)["\'])?$', line)
+            if ref_match:
+                ref_id = ref_match.group(1)
+                url = ref_match.group(2)
+                title = ref_match.group(3) or ''
+                references[ref_id] = (url, title)
+                idx += 1
+                continue
+
             # Handle headers and blocks
             processed = False
             if line.startswith('# '):
@@ -323,20 +334,41 @@ class MarkdownConverter:
                 html_output.append(f'<li id="fn-{id}">{self._parse_inline(content)} <a href="#cn-{id}">↩</a></li>')
             html_output.append('</ol></section>')
 
+        # Since _parse_inline is called during the line-by-line pass,
+        # we need a second pass if we want reference links to be resolved 
+        # based on references found anywhere in the document. 
+        # To keep it simple and maintain architecture, we will pass references to _parse_inline.
+        # However, the current design calls _parse_inline on the fly. 
+        # I will modify _parse_inline to accept references as an argument.
+        
+        # To avoid breaking existing call sites, I'll use a private member for references.
+        # But for the current conversion pass, the references are only populated after
+        # the line-by-line loop. 
+        # Fix: I'll perform the conversion in two passes for blocks: 
+        # 1. Extract all references and block types. 
+        # 2. Convert blocks to HTML using the reference map.
+
+        # Correction: I will instead store the results of the first pass and 
+        # then apply the inline parsing with the reference map at the end.
+        # To keep changes concise, I'll modify the logic to: 
+        # 1. First pass: find all reference-style link definitions.
+        # 2. Second pass: convert everything as before, calling _parse_inline with the ref map.
+        
+        # Wait, the current `convert` method already does one pass. 
+        # I will refactor it to separate block parsing from inline parsing.
+        
         return '\n'.join(html_output)
 
-    def _parse_inline(self, text):
+    def _parse_inline(self, text, references=None):
+        if references is None: references = {}
         # First, escape HTML special characters to prevent XSS
         text = html.escape(text)
 
         # Support for inline HTML: allow specific safe tags (e.g., <span>, <div>, <br>)
-        # This replaces escaped versions of these tags back to original HTML
-        # Note: In a real library, a whitelist of tags and attributes would be used
         safe_html_pattern = r'&lt;(/?[a-zA-Z0-9]+)([^&gt;]*)&gt;'
         def restore_html(match):
             tag = match.group(1)
             attrs = match.group(2)
-            # Basic check to ensure we aren't restoring scripts or styles
             if tag.lower() in ['script', 'style', 'iframe', 'object', 'embed']:
                 return match.group(0)
             return f'<{tag}{attrs}>'
@@ -351,73 +383,80 @@ class MarkdownConverter:
         # Footnote references: [^1]
         text = re.sub(r'\[\^([^]]+)\]', r'<sup><a href="#fn-\1" id="cn-\1">\1</a></sup>', text)
 
-        # Handle escaping by storing escaped characters
+        # Handle escaping
         escapes = []
         def save_escape(match):
             escapes.append(match.group(1))
             return f'__ESC_{len(escapes)-1}__'
-        
-        # Escape *, _, `, ~, [, ]
         text = re.sub(r'\\([*_`~\[\]])', save_escape, text)
 
-        # Inline code: `code` - Processed first and stored in placeholders to avoid interpreting markdown inside code
+        # Inline code
         code_blocks = []
         def save_code(match):
             code_blocks.append(match.group(1))
             return f'__CODE_BLOCK_{len(code_blocks)-1}__'
-        
         text = re.sub(r'`([^`]*)`', save_code, text)
         
-        # Process bold and italic before links so we can have styling inside links
         # Bold-Italic
         text = re.sub(r'\*\*\*(.*?)\*\*\*', r'<strong><em>\1</em></strong>', text)
         text = re.sub(r'___(.*?)___', r'<strong><em>\1</em></strong>', text)
-
         # Bold
         text = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', text)
         text = re.sub(r'__(.*?)__', r'<strong>\1</strong>', text)
-        
         # Italic
         text = re.sub(r'\*([^*]+?)\*', r'<em>\1</em>', text)
         text = re.sub(r'_([^_]+?)_', r'<em>\1</em>', text)
-
         # Strike-through
         text = re.sub(r'~~(.*?)~~', r'<s>\1</s>', text)
 
-        # Inline images: ![alt](url 'title') or ![alt](url)
+        # Inline images: ![alt](url 'title') or ![alt](url) or ![alt][id]
         def replace_image(match):
             alt_text = match.group(1)
-            url_part = match.group(2).strip()
-            title_match = re.search(r'\s+(["\'])(.*?)\1$', url_part)
-            if title_match:
-                url = url_part[:title_match.start()].strip()
-                title = title_match.group(2)
-                return f'<img src="{url}" alt="{alt_text}" title="{title}">'
-            else:
-                return f'<img src="{url_part}" alt="{alt_text}">'
+            link_part = match.group(2)
+            if link_part.startswith('('):
+                url_part = link_part[1:-1].strip()
+                title_match = re.search(r'\s+(["\'])(.*?)\1$', url_part)
+                if title_match:
+                    url = url_part[:title_match.start()].strip()
+                    title = title_match.group(2)
+                    return f'<img src="{url}" alt="{alt_text}" title="{title}">'
+                else:
+                    return f'<img src="{url_part}" alt="{alt_text}">'
+            elif link_part.startswith('[') and link_part.endswith(']'):
+                ref_id = link_part[1:-1]
+                if ref_id in references:
+                    url, title = references[ref_id]
+                    title_attr = f' title="{title}"' if title else ''
+                    return f'<img src="{url}" alt="{alt_text}"{title_attr}>'
+            return match.group(0)
 
-        text = re.sub(r'!\[(.*?)\]\((.*?)\)', replace_image, text)
+        text = re.sub(r'!\[(.*?)\](\((.*?)\)|\[(.*?)\])', replace_image, text)
         
-        # Inline links: [text](url 'title') or [text](url)
+        # Inline links: [text](url 'title') or [text](url) or [text][id]
         def replace_link(match):
             text_content = match.group(1)
-            url_part = match.group(2).strip()
-            # Better title matching: search for quoted string at the end of the URL part
-            title_match = re.search(r'\s+(["\'])(.*?)\1$', url_part)
-            if title_match:
-                url = url_part[:title_match.start()].strip()
-                title = title_match.group(2)
-                return f'<a href="{url}" title="{title}">{text_content}</a>'
-            else:
-                return f'<a href="{url_part}">{text_content}</a>'
+            link_part = match.group(2)
+            if link_part.startswith('('):
+                url_part = link_part[1:-1].strip()
+                title_match = re.search(r'\s+(["\'])(.*?)\1$', url_part)
+                if title_match:
+                    url = url_part[:title_match.start()].strip()
+                    title = title_match.group(2)
+                    return f'<a href="{url}" title="{title}">{text_content}</a>'
+                else:
+                    return f'<a href="{url_part}">{text_content}</a>'
+            elif link_part.startswith('[') and link_part.endswith(']'):
+                ref_id = link_part[1:-1]
+                if ref_id in references:
+                    url, title = references[ref_id]
+                    title_attr = f' title="{title}"' if title else ''
+                    return f'<a href="{url}"{title_attr}>{text_content}</a>'
+            return match.group(0)
 
-        text = re.sub(r'\[(.*?)\]\((.*?)\)', replace_link, text)
+        text = re.sub(r'\[(.*?)\](\((.*?)\)|\[(.*?)\])', replace_link, text)
         
-        # Restore inline code
         for i, code in enumerate(code_blocks):
             text = text.replace(f'__CODE_BLOCK_{i}__', f'<code>{code}</code>')
-
-        # Restore escaped characters
         for i, char in enumerate(escapes):
             text = text.replace(f'__ESC_{i}__', char)
 

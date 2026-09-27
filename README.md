@@ -8,7 +8,7 @@ A lightweight Python library to convert basic Markdown syntax into HTML5.
 - Unordered and Ordered lists
 - Blockquotes
 - Code blocks and inline code
-- Links and Images
+- Links and Images (including reference-style links)
 - Horizontal Rules
 - Paragraph handling
 - Tables with alignment
