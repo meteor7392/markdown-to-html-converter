@@ -19,6 +19,67 @@ class MarkdownConverter:
             id_text = "section"
         return id_text
 
+    def generate_toc(self, text):
+        """Generate a Table of Contents as an HTML unordered list based on headers."""
+        lines = text.split('\n')
+        toc_items = []
+        
+        for line in lines:
+            # Match ATX headers (# Header)
+            match = re.match(r'^(#{1,6})\s+(.*)', line)
+            if match:
+                level = len(match.group(1))
+                content = match.group(2)
+                header_id = self._generate_id(content)
+                # We use a simple indentation based on level
+                indent = '  ' * (level - 1)
+                toc_items.append((level, f'<li><a href="#{header_id}">{content}</a></li>'))
+        
+        if not toc_items:
+            return ''
+
+        # Build the nested list structure
+        res = ['<ul class="toc">']
+        current_level = toc_items[0][0]
+        
+        for level, item in toc_items:
+            if level > current_level:
+                res.append('<ul>')
+            elif level < current_level:
+                while current_level > level:
+                    res.append('</ul>')
+                    current_level -= 1
+            
+            res.append(item)
+            current_level = level
+            
+        while current_level > 0:
+            res.append('</ul>')
+            current_level -= 1
+            
+        # The first <ul> was already added, but the loop might close more than it opens
+        # if we aren't careful. The logic above is simplified; let's ensure it closes correctly.
+        # Actually, a flatter approach for simple TOC is often preferred, but nested is better.
+        # Let's just ensure we close all open tags.
+        
+        # Correcting the nesting logic to be more robust:
+        final_toc = ['<ul class="toc">']
+        stack = [1]
+        for level, item in toc_items:
+            while level > stack[-1]:
+                final_toc.append('<ul>')
+                stack.append(stack[-1] + 1)
+            while level < stack[-1]:
+                final_toc.append('</ul>')
+                stack.pop()
+            final_toc.append(item)
+        while len(stack) > 1:
+            final_toc.append('</ul>')
+            stack.pop()
+        final_toc.append('</ul>')
+
+        return ''.join(final_toc)
+
     def convert(self, text):
         lines = text.split('\n')
         
