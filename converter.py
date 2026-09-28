@@ -286,6 +286,16 @@ class MarkdownConverter:
                 idx += 1
                 continue
 
+            # Handle block-level HTML
+            if line.strip().startswith('<') and re.match(r'^\s*</?[a-zA-Z0-9]+', line):
+                # Check if it's a safe block tag
+                tag_match = re.match(r'^\s*</?([a-zA-Z0-9]+)', line)
+                tag = tag_match.group(1).lower()
+                if tag not in ['script', 'style', 'iframe', 'object', 'embed']:
+                    html_output.append(line)
+                    idx += 1
+                    continue
+
             # Handle headers and blocks
             processed = False
             if line.startswith('# '):
