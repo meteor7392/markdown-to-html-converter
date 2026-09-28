@@ -432,8 +432,8 @@ class MarkdownConverter:
 
         def replace_image(match):
             alt_text = match.group(1)
-            link_part = match.group(2)
-            if link_part.startswith('('):
+            link_part = match.group(2) or match.group(3)
+            if link_part and link_part.startswith('('):
                 url_part = link_part[1:-1].strip()
                 title_match = re.search(r'\s+(["\'])(.*?)\1$', url_part)
                 if title_match:
@@ -442,7 +442,7 @@ class MarkdownConverter:
                     return f'<img src="{url}" alt="{alt_text}" title="{title}">'
                 else:
                     return f'<img src="{url_part}" alt="{alt_text}">'
-            elif link_part.startswith('[') and link_part.endswith(']'):
+            elif link_part and link_part.startswith('[') and link_part.endswith(']'):
                 ref_id = link_part[1:-1]
                 if ref_id in references:
                     url, title = references[ref_id]
@@ -454,8 +454,8 @@ class MarkdownConverter:
         
         def replace_link(match):
             text_content = match.group(1)
-            link_part = match.group(2)
-            if link_part.startswith('('):
+            link_part = match.group(2) or match.group(3)
+            if link_part and link_part.startswith('('):
                 url_part = link_part[1:-1].strip()
                 title_match = re.search(r'\s+(["\'])(.*?)\1$', url_part)
                 if title_match:
@@ -464,7 +464,7 @@ class MarkdownConverter:
                     return f'<a href="{url}" title="{title}">{text_content}</a>'
                 else:
                     return f'<a href="{url_part}">{text_content}</a>'
-            elif link_part.startswith('[') and link_part.endswith(']'):
+            elif link_part and link_part.startswith('[') and link_part.endswith(']'):
                 ref_id = link_part[1:-1]
                 if ref_id in references:
                     url, title = references[ref_id]
