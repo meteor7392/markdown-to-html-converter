@@ -20,6 +20,9 @@ class TestMarkdownConverter(unittest.TestCase):
     def test_strikethrough(self):
         self.assertEqual(self.converter.convert('This is ~~strikethrough~~'), '<p>This is <s>strikethrough</s></p>')
 
+    def test_highlight(self):
+        self.assertEqual(self.converter.convert('This is ==highlighted=='), '<p>This is <mark>highlighted</mark></p>')
+
     def test_lists(self):
         md = "- Item 1\n- Item 2"
         expected = "<ul>\n<li>Item 1</li>\n<li>Item 2</li>\n</ul>"

@@ -223,10 +223,6 @@ class MarkdownConverter:
             if line.startswith('> '):
                 if not in_blockquote:
                     html_output.append('<blockquote')
-                    # The existing code had a bug here, let's fix it to be <blockquote>
-                    # Wait, the provided code was <blockquote
-                    # Actually looking at provided context: html_output.append('<blockquote>')
-                    # Let's stick to provided original code style but ensure it's correct
                     html_output[-1] = '<blockquote>'
                     in_blockquote = True
                 
@@ -235,7 +231,6 @@ class MarkdownConverter:
                 idx += 1
                 continue
             elif line.startswith('>'):
-                # Handle blockquote with empty content or just '>'
                 if not in_blockquote:
                     html_output.append('<blockquote>')
                     in_blockquote = True
@@ -266,7 +261,6 @@ class MarkdownConverter:
                     html_output.append(f'<{current_type}>')
                     list_stack.append((indent, current_type))
                 else:
-                    # Check for nesting
                     if indent > (list_stack[-1][0] if list_stack else -1):
                         html_output.append(f'<{current_type}>')
                         list_stack.append((indent, current_type))
@@ -278,7 +272,6 @@ class MarkdownConverter:
                             html_output.append(f'<{current_type}>')
                             list_stack.append((indent, current_type))
                     elif current_type != list_stack[-1][1]:
-                        # Transition from UL to OL or vice versa at same level
                         html_output.append(f'</{list_stack[-1][1]}>')
                         html_output.append(f'<{current_type}>')
                         list_stack[-1] = (indent, current_type)
@@ -303,7 +296,6 @@ class MarkdownConverter:
                     idx += 2
                     continue
                 elif next_line and re.match(r'^\s*(-+)\s*$', next_line):
-                    # Check if it's a horizontal rule instead of a header
                     if idx > 0 and not lines[idx-1].strip():
                         pass
                     elif line.strip():
@@ -313,7 +305,7 @@ class MarkdownConverter:
                         idx += 2
                         continue
 
-            # Handle horizontal rules - improved regex to be more robust
+            # Handle horizontal rules
             if re.match(r'^\s*([-*_=])(\s*\1){2,}\s*$', line):
                 html_output.append('<hr>')
                 idx += 1
@@ -326,7 +318,7 @@ class MarkdownConverter:
                 idx += 1
                 continue
 
-            # Handle reference-style links definitions - skip in pass 2
+            # Handle reference-style links definitions
             ref_match = re.match(r'^\s*\[([^\s\]]+)\]:\s*(\S+)(?:\s+["\'](.*?)["\'])?$', line)
             if ref_match:
                 idx += 1
@@ -334,7 +326,6 @@ class MarkdownConverter:
 
             # Handle block-level HTML
             if line.strip().startswith('<') and re.match(r'^\s*</?[a-zA-Z0-9]+', line):
-                # Check if it's a safe block tag
                 tag_match = re.match(r'^\s*</?([a-zA-Z0-9]+)', line)
                 tag = tag_match.group(1).lower()
                 if tag not in ['script', 'style', 'iframe', 'object', 'embed']:
@@ -388,7 +379,6 @@ class MarkdownConverter:
             html_output.append('\n'.join(code_buffer))
             html_output.append('</code></pre>')
 
-        # Process footnotes at the end of the document
         if footnotes:
             html_output.append('<hr><section class="footnotes"><ol>')
             for id, content in footnotes:
@@ -399,10 +389,8 @@ class MarkdownConverter:
 
     def _parse_inline(self, text, references=None):
         if references is None: references = {}
-        # First, escape HTML special characters to prevent XSS
         text = html.escape(text)
 
-        # Support for inline HTML: allow specific safe tags (e.g., <span>, <div>, <br>)
         safe_html_pattern = r'&lt;(/?[a-zA-Z0-9]+)([^&gt;]*)&gt;'
         def restore_html(match):
             tag = match.group(1)
@@ -413,42 +401,35 @@ class MarkdownConverter:
         
         text = re.sub(safe_html_pattern, restore_html, text)
 
-        # Task lists support (checkboxes)
         text = re.sub(r'\[ \] ', r'<input type="checkbox" disabled> ', text)
         text = re.sub(r'\[x\] ', r'<input type="checkbox" checked disabled> ', text)
         text = re.sub(r'\[X\] ', r'<input type="checkbox" checked disabled> ', text)
 
-        # Footnote references: [^1]
         text = re.sub(r'\[\^([^]]+)\]', r'<sup><a href="#fn-\1" id="cn-\1">\1</a></sup>', text)
 
-        # Handle escaping
         escapes = []
         def save_escape(match):
             escapes.append(match.group(1))
             return f'__ESC_{len(escapes)-1}__'
         text = re.sub(r'\\([*_`~\[\]])', save_escape, text)
 
-        # Inline code
         code_blocks = []
         def save_code(match):
             code_blocks.append(match.group(1))
             return f'__CODE_BLOCK_{len(code_blocks)-1}__'
         text = re.sub(r'`([^`]*)`', save_code, text)
         
-        # Style patterns - handled in order from most specific to least specific
-        # Bold-Italic
+        # Highlight support
+        text = re.sub(r'==([^=]+)==', r'<mark>\1</mark>', text)
+
         text = re.sub(r'\*\*\*([^*]+?)\*\*\*', r'<strong><em>\1</em></strong>', text)
         text = re.sub(r'___([^_]+?)___', r'<strong><em>\1</em></strong>', text)
-        # Bold
         text = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', text)
         text = re.sub(r'__(.*?)__', r'<strong>\1</strong>', text)
-        # Italic
         text = re.sub(r'\*([^*]+?)\*', r'<em>\1</em>', text)
         text = re.sub(r'_([^_]+?)_', r'<em>\1</em>', text)
-        # Strike-through
         text = re.sub(r'~~(.*?)~~', r'<s>\1</s>', text)
 
-        # Inline images: ![alt](url 'title') or ![alt](url) or ![alt][id]
         def replace_image(match):
             alt_text = match.group(1)
             link_part = match.group(2)
@@ -471,7 +452,6 @@ class MarkdownConverter:
 
         text = re.sub(r'!\[(.*?)\](\((.*?)\)|\[(.*?)\])', replace_image, text)
         
-        # Inline links: [text](url 'title') or [text](url) or [text][id]
         def replace_link(match):
             text_content = match.group(1)
             link_part = match.group(2)
