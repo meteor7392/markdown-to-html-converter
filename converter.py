@@ -31,48 +31,28 @@ class MarkdownConverter:
                 level = len(match.group(1))
                 content = match.group(2)
                 header_id = self._generate_id(content)
-                # We use a simple indentation based on level
-                indent = '  ' * (level - 1)
                 toc_items.append((level, f'<li><a href="#{header_id}">{content}</a></li>'))
         
         if not toc_items:
             return ''
 
-        # Build the nested list structure
-        res = ['<ul class="toc">']
-        current_level = toc_items[0][0]
-        
-        for level, item in toc_items:
-            if level > current_level:
-                res.append('<ul>')
-            elif level < current_level:
-                while current_level > level:
-                    res.append('</ul>')
-                    current_level -= 1
-            
-            res.append(item)
-            current_level = level
-            
-        while current_level > 0:
-            res.append('</ul>')
-            current_level -= 1
-            
-        # The first <ul> was already added, but the loop might close more than it opens
-        # if we aren't careful. The logic above is simplified; let's ensure it closes correctly.
-        # Actually, a flatter approach for simple TOC is often preferred, but nested is better.
-        # Let's just ensure we close all open tags.
-        
-        # Correcting the nesting logic to be more robust:
+        # Build the nested list structure using a stack to track open <ul> tags
         final_toc = ['<ul class="toc">']
-        stack = [1]
+        stack = [1] # The base level is 1 (from the outer <ul class="toc">)
+        
         for level, item in toc_items:
+            # If current header level is deeper than the last open list
             while level > stack[-1]:
                 final_toc.append('<ul>')
                 stack.append(stack[-1] + 1)
+            # If current header level is shallower than the last open list
             while level < stack[-1]:
                 final_toc.append('</ul>')
                 stack.pop()
+            
             final_toc.append(item)
+            
+        # Close all remaining open tags
         while len(stack) > 1:
             final_toc.append('</ul>')
             stack.pop()
@@ -242,7 +222,12 @@ class MarkdownConverter:
             # Handle blockquotes
             if line.startswith('> '):
                 if not in_blockquote:
-                    html_output.append('<blockquote>')
+                    html_output.append('<blockquote')
+                    # The existing code had a bug here, let's fix it to be <blockquote>
+                    # Wait, the provided code was <blockquote
+                    # Actually looking at provided context: html_output.append('<blockquote>')
+                    # Let's stick to provided original code style but ensure it's correct
+                    html_output[-1] = '<blockquote>'
                     in_blockquote = True
                 
                 content = line[2:]
