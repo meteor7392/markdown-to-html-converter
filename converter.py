@@ -24,14 +24,40 @@ class MarkdownConverter:
         lines = text.split('\n')
         toc_items = []
         
-        for line in lines:
+        idx = 0
+        while idx < len(lines):
+            line = lines[idx]
             # Match ATX headers (# Header)
-            match = re.match(r'^(#{1,6})\s+(.*)', line)
-            if match:
-                level = len(match.group(1))
-                content = match.group(2)
+            atx_match = re.match(r'^(#{1,6})\s+(.*)', line)
+            if atx_match:
+                level = len(atx_match.group(1))
+                content = atx_match.group(2)
                 header_id = self._generate_id(content)
                 toc_items.append((level, f'<li><a href="#{header_id}">{content}</a></li>'))
+                idx += 1
+                continue
+            
+            # Match Setext headers (H1: ===, H2: ---)
+            if idx + 1 < len(lines):
+                next_line = lines[idx + 1]
+                if next_line and re.match(r'^\s*(=+)\s*$', next_line):
+                    content = line
+                    header_id = self._generate_id(content)
+                    toc_items.append((1, f'<li><a href="#{header_id}">{content}</a></li>'))
+                    idx += 2
+                    continue
+                elif next_line and re.match(r'^\s*(-+)\s*$', next_line):
+                    if idx > 0 and not lines[idx-1].strip():
+                        idx += 1
+                        continue
+                    elif line.strip():
+                        content = line
+                        header_id = self._generate_id(content)
+                        toc_items.append((2, f'<li><a href="#{header_id}">{content}</a></li>'))
+                        idx += 2
+                        continue
+            
+            idx += 1
         
         if not toc_items:
             return ''
