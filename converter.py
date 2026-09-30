@@ -503,6 +503,9 @@ class MarkdownConverter:
 
         text = re.sub(r'\[(.*?)\](\((.*?)\)|\[(.*?)\])', replace_link, text)
         
+        # Automatic links <url>
+        text = re.sub(r'<(https?://[^>]+)>', r'<a href="\1">\1</a>', text)
+        
         for i, code in enumerate(code_blocks):
             text = text.replace(f'__CODE_BLOCK_{i}__', f'<code>{code}</code>')
         for i, char in enumerate(escapes):
