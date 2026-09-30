@@ -188,7 +188,7 @@ class MarkdownConverter:
             if not in_blockquote:
                 return
             
-            html_output.append('<blockquote]')
+            html_output.append('<blockquote>')
             # Combine buffer into paragraphs
             content = '\n'.join(blockquote_buffer)
             for p in content.split('\n\n'):
@@ -440,7 +440,7 @@ class MarkdownConverter:
         text = re.sub(r'\[x\] ', r'<input type="checkbox" checked disabled> ', text)
         text = re.sub(r'\[X\] ', r'<input type="checkbox" checked disabled> ', text)
 
-        text = re.sub(r'\[\^([^]]+)\]', r'<sup><a href="#fn-\1" id="cn-\1">\1</a></h5>', text)
+        text = re.sub(r'\[\^([^]]+)\]', r'<sup><a href="#fn-\1" id="cn-\1">\1</sup>', text)
 
         escapes = []
         def save_escape(match):
