@@ -104,6 +104,7 @@ class MarkdownConverter:
         in_list = False
         list_stack = [] # Stack to track nesting levels: (indent, type)
         in_blockquote = False
+        blockquote_buffer = []
         in_code_block = False
         code_buffer = []
         in_table = False
@@ -174,6 +175,23 @@ class MarkdownConverter:
             table_buffer = []
             in_table = False
 
+        def flush_blockquote():
+            nonlocal in_blockquote, blockquote_buffer
+            if not in_blockquote:
+                return
+            
+            html_output.append('<blockquote>')
+            # Combine buffer into paragraphs
+            content = '\n'.join(blockquote_buffer)
+            for p in content.split('\n\n'):
+                if p.strip():
+                    html_output.append(f'<p>{self._parse_inline(p.replace("\n", " "), references)}</p>')
+                else:
+                    html_output.append('<p></p>')
+            html_output.append('</blockquote>')
+            blockquote_buffer = []
+            in_blockquote = False
+
         idx = 0
         while idx < len(lines):
             line = lines[idx]
@@ -181,6 +199,7 @@ class MarkdownConverter:
             # Handle fenced code blocks
             if line.startswith('```'):
                 flush_table()
+                flush_blockquote()
                 if not in_code_block:
                     in_code_block = True
                     code_buffer = []
@@ -195,14 +214,12 @@ class MarkdownConverter:
             # Handle indented code blocks (4 spaces or 1 tab)
             if not in_code_block and (line.startswith('    ') or line.startswith('\t')):
                 flush_table()
+                flush_blockquote()
                 if in_list:
                     while list_stack:
                         html_output.append(f'</{list_stack[-1][1]}>')
                         list_stack.pop()
                     in_list = False
-                if in_blockquote:
-                    html_output.append('</blockquote>')
-                    in_blockquote = False
                 
                 in_code_block = True
                 code_buffer = []
@@ -235,6 +252,7 @@ class MarkdownConverter:
 
             # Handle tables
             if '|' in line:
+                flush_blockquote()
                 if not in_table:
                     in_table = True
                     table_buffer = [line]
@@ -246,38 +264,23 @@ class MarkdownConverter:
                 flush_table()
 
             # Handle blockquotes
-            if line.startswith('> '):
+            if line.startswith('>'):
                 if not in_blockquote:
-                    html_output.append('<blockquote')
-                    html_output[-1] = '<blockquote>'
-                    in_blockquote = True
-                
-                content = line[2:]
-                html_output.append(f'<p>{self._parse_inline(content, references)}</p>')
-                idx += 1
-                continue
-            elif line.startswith('>'):
-                if not in_blockquote:
-                    html_output.append('<blockquote>')
                     in_blockquote = True
                 
                 content = line[1:].strip()
-                if content:
-                    html_output.append(f'<p>{self._parse_inline(content, references)}</p>')
-                else:
-                    html_output.append('<p></p>')
+                blockquote_buffer.append(content)
                 idx += 1
                 continue
             else:
-                if in_blockquote:
-                    html_output.append('</blockquote>')
-                    in_blockquote = False
+                flush_blockquote()
 
             # Handle lists (including nested)
             ul_match = re.match(r'^(\s*)- ', line)
             ol_match = re.match(r'^(\s*)\d+\.\s', line)
             
             if ul_match or ol_match:
+                flush_blockquote()
                 indent = len(ul_match.group(1)) if ul_match else len(ol_match.group(1))
                 current_type = 'ul' if ul_match else 'ol'
                 content = re.sub(r'^\s*(- |\d+\.\s)', '', line)
@@ -395,11 +398,11 @@ class MarkdownConverter:
             idx += 1
 
         flush_table()
+        flush_blockquote()
         while list_stack:
             html_output.append(f'</{list_stack[-1][1]}>')
             list_stack.pop()
-        if in_blockquote:
-            html_output.append('</blockquote>')
+        
         if in_code_block:
             html_output.append('<pre><code>')
             html_output.append('\n'.join(code_buffer))
