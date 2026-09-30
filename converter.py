@@ -337,7 +337,7 @@ class MarkdownConverter:
                     if line.strip():
                         header_text = line
                         header_id = self._generate_id(header_text, existing_ids)
-                        html_output.append(f'<h2 id="{header_id}">{self._parse_inline(header_text, references)}</h2>')
+                        html_output.append(f'<h2 id="{header_id}">{self._parse_inline(header_text, references)}</h2>>')
                         idx += 2
                         continue
 
