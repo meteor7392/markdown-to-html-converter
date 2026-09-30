@@ -7,8 +7,8 @@ class MarkdownConverter:
     def __init__(self):
         pass
 
-    def _generate_id(self, text):
-        """Generate a URL-friendly ID from header text."""
+    def _generate_id(self, text, existing_ids):
+        """Generate a unique URL-friendly ID from header text."""
         # Convert to lowercase, replace spaces with hyphens, remove non-alphanumeric characters
         id_text = text.lower()
         id_text = re.sub(r'\s+', '-', id_text)
@@ -17,12 +17,22 @@ class MarkdownConverter:
         # Fallback for empty IDs (e.g., header is just "!!!")
         if not id_text:
             id_text = "section"
+        
+        # Ensure uniqueness
+        base_id = id_text
+        counter = 1
+        while id_text in existing_ids:
+            id_text = f"{base_id}-{counter}"
+            counter += 1
+            
+        existing_ids.add(id_text)
         return id_text
 
     def generate_toc(self, text):
         """Generate a Table of Contents as an HTML unordered list based on headers."""
         lines = text.split('\n')
         toc_items = []
+        existing_ids = set()
         
         idx = 0
         while idx < len(lines):
@@ -32,7 +42,7 @@ class MarkdownConverter:
             if atx_match:
                 level = len(atx_match.group(1))
                 content = atx_match.group(2)
-                header_id = self._generate_id(content)
+                header_id = self._generate_id(content, existing_ids)
                 toc_items.append((level, f'<li><a href="#{header_id}">{content}</a></li>'))
                 idx += 1
                 continue
@@ -42,7 +52,7 @@ class MarkdownConverter:
                 next_line = lines[idx + 1]
                 if next_line and re.match(r'^\s*(=+)\s*$', next_line):
                     content = line
-                    header_id = self._generate_id(content)
+                    header_id = self._generate_id(content, existing_ids)
                     toc_items.append((1, f'<li><a href="#{header_id}">{content}</a></li>'))
                     idx += 2
                     continue
@@ -52,7 +62,7 @@ class MarkdownConverter:
                         continue
                     elif line.strip():
                         content = line
-                        header_id = self._generate_id(content)
+                        header_id = self._generate_id(content, existing_ids)
                         toc_items.append((2, f'<li><a href="#{header_id}">{content}</a></li>'))
                         idx += 2
                         continue
@@ -111,6 +121,7 @@ class MarkdownConverter:
         table_buffer = []
         
         footnotes = []
+        existing_ids = set()
 
         def flush_table():
             nonlocal in_table, table_buffer
@@ -320,7 +331,7 @@ class MarkdownConverter:
                 next_line = lines[idx + 1]
                 if next_line and re.match(r'^\s*(=+)\s*$', next_line):
                     header_text = line
-                    header_id = self._generate_id(header_text)
+                    header_id = self._generate_id(header_text, existing_ids)
                     html_output.append(f'<h1 id="{header_id}">{self._parse_inline(header_text, references)}</h1>')
                     idx += 2
                     continue
@@ -329,7 +340,7 @@ class MarkdownConverter:
                         pass
                     elif line.strip():
                         header_text = line
-                        header_id = self._generate_id(header_text)
+                        header_id = self._generate_id(header_text, existing_ids)
                         html_output.append(f'<h2 id="{header_id}">{self._parse_inline(header_text, references)}</h2>')
                         idx += 2
                         continue
@@ -366,27 +377,27 @@ class MarkdownConverter:
             processed = False
             if line.startswith('# '):
                 content = line[2:]
-                html_output.append(f'<h1 id="{self._generate_id(content)}">{self._parse_inline(content, references)}</h1>')
+                html_output.append(f'<h1 id="{self._generate_id(content, existing_ids)}">{self._parse_inline(content, references)}</h1>')
                 processed = True
             elif line.startswith('## '):
                 content = line[3:]
-                html_output.append(f'<h2 id="{self._generate_id(content)}">{self._parse_inline(content, references)}</h2>')
+                html_output.append(f'<h2 id="{self._generate_id(content, existing_ids)}">{self._parse_inline(content, references)}</h2>')
                 processed = True
             elif line.startswith('### '):
                 content = line[4:]
-                html_output.append(f'<h3 id="{self._generate_id(content)}">{self._parse_inline(content, references)}</h3>')
+                html_output.append(f'<h3 id="{self._generate_id(content, existing_ids)}">{self._parse_inline(content, references)}</h3>')
                 processed = True
             elif line.startswith('#### '):
                 content = line[5:]
-                html_output.append(f'<h4 id="{self._generate_id(content)}">{self._parse_inline(content, references)}</h4>')
+                html_output.append(f'<h4 id="{self._generate_id(content, existing_ids)}">{self._parse_inline(content, references)}</h4>')
                 processed = True
             elif line.startswith('##### '):
                 content = line[6:]
-                html_output.append(f'<h5 id="{self._generate_id(content)}">{self._parse_inline(content, references)}</h5>')
+                html_output.append(f'<h5 id="{self._generate_id(content, existing_ids)}">{self._parse_inline(content, references)}</h5>')
                 processed = True
             elif line.startswith('###### '):
                 content = line[7:]
-                html_output.append(f'<h6 id="{self._generate_id(content)}">{self._parse_inline(content, references)}</h6>')
+                html_output.append(f'<h6 id="{self._generate_id(content, existing_ids)}">{self._parse_inline(content, references)}</h6>')
                 processed = True
             
             if not processed:
