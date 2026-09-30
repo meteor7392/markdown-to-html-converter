@@ -139,6 +139,7 @@ class MarkdownConverter:
             
             def split_row(row_line):
                 row_line = row_line.strip()
+                # Remove leading and trailing pipes for cleaner splitting
                 if row_line.startswith('|'): row_line = row_line[1:]
                 if row_line.endswith('|'): row_line = row_line[:-1]
                 return [cell.strip() for cell in row_line.split('|')]
