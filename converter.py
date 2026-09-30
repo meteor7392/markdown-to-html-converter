@@ -72,26 +72,23 @@ class MarkdownConverter:
         if not toc_items:
             return ''
 
-        # Build the nested list structure using a stack to track open <ul> tags
+        # Build the nested list structure
         final_toc = ['<ul class="toc">']
-        stack = [1] # The base level is 1 (from the outer <ul class="toc">)
+        current_level = 1
         
         for level, item in toc_items:
-            # If current header level is deeper than the last open list
-            while level > stack[-1]:
+            while level > current_level:
                 final_toc.append('<ul>')
-                stack.append(stack[-1] + 1)
-            # If current header level is shallower than the last open list
-            while level < stack[-1]:
+                current_level += 1
+            while level < current_level:
                 final_toc.append('</ul>')
-                stack.pop()
+                current_level -= 1
             
             final_toc.append(item)
             
-        # Close all remaining open tags
-        while len(stack) > 1:
+        while current_level > 1:
             final_toc.append('</ul>')
-            stack.pop()
+            current_level -= 1
         final_toc.append('</ul>')
 
         return ''.join(final_toc)
@@ -191,7 +188,7 @@ class MarkdownConverter:
             if not in_blockquote:
                 return
             
-            html_output.append('<blockquote>')
+            html_output.append('<blockquote]')
             # Combine buffer into paragraphs
             content = '\n'.join(blockquote_buffer)
             for p in content.split('\n\n'):
@@ -336,9 +333,7 @@ class MarkdownConverter:
                     idx += 2
                     continue
                 elif next_line and re.match(r'^\s*(-+)\s*$', next_line):
-                    if idx > 0 and not lines[idx-1].strip():
-                        pass
-                    elif line.strip():
+                    if line.strip():
                         header_text = line
                         header_id = self._generate_id(header_text, existing_ids)
                         html_output.append(f'<h2 id="{header_id}">{self._parse_inline(header_text, references)}</h2>')
@@ -445,7 +440,7 @@ class MarkdownConverter:
         text = re.sub(r'\[x\] ', r'<input type="checkbox" checked disabled> ', text)
         text = re.sub(r'\[X\] ', r'<input type="checkbox" checked disabled> ', text)
 
-        text = re.sub(r'\[\^([^]]+)\]', r'<sup><a href="#fn-\1" id="cn-\1">\1</a></sup>', text)
+        text = re.sub(r'\[\^([^]]+)\]', r'<sup><a href="#fn-\1" id="cn-\1">\1</a></h5>', text)
 
         escapes = []
         def save_escape(match):
