@@ -440,7 +440,7 @@ class MarkdownConverter:
         text = re.sub(r'\[x\] ', r'<input type="checkbox" checked disabled> ', text)
         text = re.sub(r'\[X\] ', r'<input type="checkbox" checked disabled> ', text)
 
-        text = re.sub(r'\[\^([^]]+)\]', r'<sup><a href="#fn-\1" id="cn-\1">\1</sup>', text)
+        text = re.sub(r'\[\^([^]]+)\]', r'<sup><a href="#fn-\1" id="cn-\1">\1</a></sup>', text)
 
         escapes = []
         def save_escape(match):
