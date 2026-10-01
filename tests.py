@@ -60,6 +60,17 @@ class TestMarkdownConverter(unittest.TestCase):
         self.assertEqual(self.converter.convert('![Alt text](img.jpg)'), '<p><img src="img.jpg" alt="Alt text"></p>')
         self.assertEqual(self.converter.convert('![Alt text](img.jpg "Title")'), '<p><img src="img.jpg" alt="Alt text" title="Title"></p>')
 
+    def test_reference_links(self):
+        md = "Check [Google][1] and [Bing][2].\n\n[1]: https://google.com "Search Engine"
+[2]: https://bing.com"
+        expected = "<p>Check <a href=\"https://google.com\" title=\"Search Engine\">Google</a> and <a href=\"https://bing.com\">Bing</a>.</p>"
+        self.assertEqual(self.converter.convert(md), expected)
+
+    def test_reference_images(self):
+        md = "![Logo][logo-ref]\n\n[logo-ref]: https://example.com/logo.png "Company Logo""
+        expected = "<p><img src=\"https://example.com/logo.png\" alt=\"Logo\" title=\"Company Logo\"></p>"
+        self.assertEqual(self.converter.convert(md), expected)
+
     def test_code(self):
         # Inline code
         self.assertEqual(self.converter.convert('Use `print()`'), '<p>Use <code>print()</code></p>')
