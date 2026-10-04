@@ -14,12 +14,19 @@ A lightweight Python library to convert basic Markdown syntax into HTML5.
 - Tables with alignment
 - Footnotes
 - Task lists
+- Table of Contents generation
 
 ## Usage
 ```python
 from converter import MarkdownConverter
 
 conv = MarkdownConverter()
-html = conv.convert("# Welcome\nThis is **bold** text.")
-print(html)
+md_text = "# Welcome\nThis is **bold** text.\n\n## Section 1\nSome content."
+
+# Generate TOC
+toc = conv.generate_toc(md_text)
+# Convert content
+html = conv.convert(md_text)
+
+print(toc + html)
 ```

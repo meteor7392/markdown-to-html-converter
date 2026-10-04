@@ -175,5 +175,15 @@ class TestMarkdownConverter(unittest.TestCase):
         expected = "<p>First<sup><a href=\"#fn-1\" id=\"cn-1\">1</a></sup> and second<sup><a href=\"#fn-2\" id=\"cn-2\">2</a></sup>.</p>\n<hr><section class=\"footnotes\"><ol><li id=\"fn-1\">Footnote 1 <a href=\"#cn-1\">↩</a></li><li id=\"fn-2\">Footnote 2 <a href=\"#cn-2\">↩</a></li></ol></section>"
         self.assertEqual(self.converter.convert(md), expected)
 
+    def test_generate_toc(self):
+        md = "# Header 1\n## Sub 1.1\n## Sub 1.2\n### Sub 1.2.1\n# Header 2"
+        toc = self.converter.generate_toc(md)
+        self.assertIn('<ul class="toc">', toc)
+        self.assertIn('<a href="#header-1">Header 1</a>', toc)
+        self.assertIn('<a href="#sub-11">Sub 1.1</a>', toc)
+        self.assertIn('<a href="#sub-12">Sub 1.2</a>', toc)
+        self.assertIn('<a href="#sub-121">Sub 1.2.1</a>', toc)
+        self.assertIn('<a href="#header-2">Header 2</a>', toc)
+
 if __name__ == '__main__':
     unittest.main()
