@@ -73,8 +73,9 @@ class MarkdownConverter:
             return ''
 
         # Build the nested list structure
+        min_level = min(item[0] for item in toc_items)
         final_toc = ['<ul class="toc">']
-        current_level = 1
+        current_level = min_level
         
         for level, item in toc_items:
             while level > current_level:
@@ -86,7 +87,7 @@ class MarkdownConverter:
             
             final_toc.append(item)
             
-        while current_level > 1:
+        while current_level > min_level:
             final_toc.append('</ul>')
             current_level -= 1
         final_toc.append('</ul>')
