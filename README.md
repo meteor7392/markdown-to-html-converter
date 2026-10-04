@@ -5,6 +5,7 @@ A lightweight Python library to convert basic Markdown syntax into HTML5.
 ## Features
 - Headers (H1-H6)
 - Bold and Italic text
+- Underline text (using `++text++`)
 - Unordered and Ordered lists
 - Blockquotes
 - Code blocks and inline code
@@ -21,7 +22,7 @@ A lightweight Python library to convert basic Markdown syntax into HTML5.
 from converter import MarkdownConverter
 
 conv = MarkdownConverter()
-md_text = "# Welcome\nThis is **bold** text.\n\n## Section 1\nSome content."
+md_text = "# Welcome\nThis is **bold** and ++underlined++ text.\n\n## Section 1\nSome content."
 
 # Generate TOC
 toc = conv.generate_toc(md_text)

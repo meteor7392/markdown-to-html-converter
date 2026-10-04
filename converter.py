@@ -468,6 +468,10 @@ class MarkdownConverter:
         text = re.sub(r'\*([^*]+?)\*', r'<em>\1</em>', text)
         text = re.sub(r'_([^_]+?)_', r'<em>\1</em>', text)
         text = re.sub(r'~~(.*?)~~', r'<s>\1</s>', text)
+        text = re.sub(r'__(.*?)__', r'<u>\1</u>', text) if '<u>' not in text else text # Simple underline toggle if not used for bold
+        # To avoid conflict with bold __, we typically prefer a different marker or a specific rule
+        # For this library, we will use a custom marker for underline: ++text++
+        text = re.sub(r'\+\+(.*?)\+\+', r'<u>\1</u>', text)
 
         def replace_image(match):
             alt_text = match.group(1)
