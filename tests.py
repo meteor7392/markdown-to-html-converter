@@ -97,6 +97,9 @@ class TestMarkdownConverter(unittest.TestCase):
         self.assertEqual(self.converter.convert(' - - - '), '<hr>')
         self.assertEqual(self.converter.convert(' * * * '), '<hr>')
         self.assertEqual(self.converter.convert(' _ _ _ '), '<hr>')
+        # Test with mixed spacing
+        self.assertEqual(self.converter.convert('--- '), '<hr>')
+        self.assertEqual(self.converter.convert('  ***'), '<hr>')
 
     def test_mixed_content(self):
         md = "# Title\n\nThis is **bold** and [a link](url).
