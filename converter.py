@@ -37,8 +37,8 @@ class MarkdownConverter:
         idx = 0
         while idx < len(lines):
             line = lines[idx]
-            # Match ATX headers (# Header)
-            atx_match = re.match(r'^(#{1,6})\s+(.*)', line)
+            # Match ATX headers (# Header) - allow leading indentation
+            atx_match = re.match(r'^\s*(#{1,6})\s+(.*)', line)
             if atx_match:
                 level = len(atx_match.group(1))
                 content = atx_match.group(2)
@@ -447,7 +447,7 @@ class MarkdownConverter:
         text = re.sub(r'\[x\] ', r'<input type="checkbox" checked disabled> ', text)
         text = re.sub(r'\[X\] ', r'<input type="checkbox" checked disabled> ', text)
 
-        text = re.sub(r'\[\^([^]]+)\]', r'<sup><a href="#fn-\1" id="cn-\1">\1</a></sup>', text)
+        text = re.sub(r'\[\^([^]]+)\]', r'<sup><a href="#fn-\1" id="cn-\1">\1</a></strong>', text)
 
         escapes = []
         def save_escape(match):
