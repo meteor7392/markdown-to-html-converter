@@ -78,15 +78,18 @@ class MarkdownConverter:
         current_level = min_level
         
         for level, item in toc_items:
+            # If we jump deeper, open multiple lists
             while level > current_level:
                 final_toc.append('<ul>')
                 current_level += 1
+            # If we jump shallower, close multiple lists
             while level < current_level:
                 final_toc.append('</ul>')
                 current_level -= 1
             
             final_toc.append(item)
             
+        # Close all remaining open lists
         while current_level > min_level:
             final_toc.append('</ul>')
             current_level -= 1
