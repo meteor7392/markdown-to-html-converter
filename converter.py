@@ -148,9 +148,11 @@ class MarkdownConverter:
                 row_line = row_line.strip()
                 if not row_line:
                     return []
-                # Remove leading and trailing pipes for cleaner splitting
-                if row_line.startswith('|'): row_line = row_line[1:]
-                if row_line.endswith('|'): row_line = row_line[:-1]
+                # Strip leading/trailing pipes if they exist
+                if row_line.startswith('|'):
+                    row_line = row_line[1:]
+                if row_line.endswith('|'):
+                    row_line = row_line[:-1]
                 return [cell.strip() for cell in row_line.split('|')]
 
             # Header
