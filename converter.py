@@ -129,7 +129,10 @@ class MarkdownConverter:
             if not in_table:
                 return
             
-            if len(table_buffer) < 2:
+            # Clean buffer of empty lines to ensure we have a valid structure
+            cleaned_buffer = [line for line in table_buffer if line.strip()]
+            
+            if len(cleaned_buffer) < 2:
                 # Not a valid table (needs header and separator)
                 for line in table_buffer:
                     if line.strip():
@@ -151,10 +154,10 @@ class MarkdownConverter:
                 return [cell.strip() for cell in row_line.split('|')]
 
             # Header
-            headers = split_row(table_buffer[0])
+            headers = split_row(cleaned_buffer[0])
             
             # Alignment from separator line (index 1)
-            sep_cells = split_row(table_buffer[1])
+            sep_cells = split_row(cleaned_buffer[1])
             alignments = []
             for s in sep_cells:
                 if s.startswith(':') and s.endswith(':'):
@@ -171,7 +174,7 @@ class MarkdownConverter:
             table_html.append('</tr></thead><tbody>')
 
             # Rows (skip the separator line at index 1)
-            for line in table_buffer[2:]:
+            for line in cleaned_buffer[2:]:
                 row_line = line.strip()
                 if not row_line:
                     continue
@@ -276,7 +279,17 @@ class MarkdownConverter:
                 idx += 1
                 continue
             else:
-                flush_table()
+                # Only flush if we were actually in a table
+                if in_table:
+                    # If the line is just whitespace, we might still be in a table
+                    # but Markdown usually treats empty lines as table terminators.
+                    if line.strip():
+                        flush_table()
+                    else:
+                        # Keep the empty line in the buffer to potentially handle
+                        # it in flush_table (though usually we just terminate)
+                        # For simplicity and standard behavior, empty line ends table.
+                        flush_table()
 
             # Handle blockquotes
             if line.startswith('>'):
