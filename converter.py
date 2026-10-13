@@ -385,6 +385,7 @@ class MarkdownConverter:
             if line.strip().startswith('<') and re.match(r'^\s*</?[a-zA-Z0-9]+', line):
                 tag_match = re.match(r'^\s*</?([a-zA-Z0-9]+)', line)
                 tag = tag_match.group(1).lower()
+                # Allow block tags that should not be wrapped in <p>
                 if tag not in ['script', 'style', 'iframe', 'object', 'embed']:
                     html_output.append(line)
                     idx += 1
