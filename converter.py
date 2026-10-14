@@ -126,6 +126,15 @@ class MarkdownConverter:
         
         footnotes = []
         existing_ids = set()
+        paragraph_buffer = []
+
+        def flush_paragraph():
+            nonlocal paragraph_buffer
+            if not paragraph_buffer:
+                return
+            content = ' '.join(paragraph_buffer)
+            html_output.append(f'<p>{self._parse_inline(content, references)}</p>')
+            paragraph_buffer = []
 
         def flush_table():
             nonlocal in_table, table_buffer
@@ -139,7 +148,7 @@ class MarkdownConverter:
                 # Not a valid table (needs header and separator)
                 for line in table_buffer:
                     if line.strip():
-                        html_output.append(f'<p>{self._parse_inline(line, references)}</p>')
+                        paragraph_buffer.append(line)
                 table_buffer = []
                 in_table = False
                 return
@@ -221,6 +230,7 @@ class MarkdownConverter:
             
             # Handle fenced code blocks
             if line.startswith('```'):
+                flush_paragraph()
                 flush_table()
                 flush_blockquote()
                 if not in_code_block:
@@ -236,6 +246,7 @@ class MarkdownConverter:
             
             # Handle indented code blocks (4 spaces or 1 tab)
             if not in_code_block and (line.startswith('    ') or line.startswith('\t')):
+                flush_paragraph()
                 flush_table()
                 flush_blockquote()
                 if in_list:
@@ -275,6 +286,7 @@ class MarkdownConverter:
 
             # Handle tables
             if '|' in line:
+                flush_paragraph()
                 flush_blockquote()
                 if not in_table:
                     in_table = True
@@ -291,13 +303,12 @@ class MarkdownConverter:
                     if line.strip():
                         flush_table()
                     else:
-                        # Keep the empty line in the buffer to potentially handle
-                        # it in flush_table (though usually we just terminate)
                         # For simplicity and standard behavior, empty line ends table.
                         flush_table()
 
             # Handle blockquotes
             if line.startswith('>'):
+                flush_paragraph()
                 if not in_blockquote:
                     in_blockquote = True
                 
@@ -313,6 +324,7 @@ class MarkdownConverter:
             ol_match = re.match(r'^(\s*)\d+\.\s', line)
             
             if ul_match or ol_match:
+                flush_paragraph()
                 flush_blockquote()
                 indent = len(ul_match.group(1)) if ul_match else len(ol_match.group(1))
                 current_type = 'ul' if ul_match else 'ol'
@@ -343,6 +355,7 @@ class MarkdownConverter:
                 continue
             else:
                 if in_list:
+                    flush_paragraph()
                     while list_stack:
                         html_output.append(f'</{list_stack[-1][1]}>')
                         list_stack.pop()
@@ -352,15 +365,15 @@ class MarkdownConverter:
             if idx + 1 < len(lines):
                 next_line = lines[idx + 1]
                 if next_line and re.match(r'^\s*(=+)\s*$', next_line):
+                    flush_paragraph()
                     header_text = line
                     header_id = self._generate_id(header_text, existing_ids)
                     html_output.append(f'<h1 id="{header_id}">{self._parse_inline(header_text, references)}</h1>')
                     idx += 2
                     continue
                 elif next_line and re.match(r'^\s*(-+)\s*$', next_line):
-                    # Standard Markdown: Setext H2 lines must not be preceded by an empty line
-                    # to avoid confusion with horizontal rules if they look similar
                     if line.strip():
+                        flush_paragraph()
                         header_text = line
                         header_id = self._generate_id(header_text, existing_ids)
                         html_output.append(f'<h2 id="{header_id}">{self._parse_inline(header_text, references)}</h2>')
@@ -369,6 +382,7 @@ class MarkdownConverter:
 
             # Handle horizontal rules
             if re.match(r'^\s*([-*_=])(\s*\1){2,}\s*$', line):
+                flush_paragraph()
                 html_output.append('<hr>')
                 idx += 1
                 continue
@@ -376,6 +390,7 @@ class MarkdownConverter:
             # Handle footnote definitions
             fn_match = re.match(r'^\s*\[\^([^]]+)\]:\s*(.*)', line)
             if fn_match:
+                flush_paragraph()
                 footnotes.append((fn_match.group(1), fn_match.group(2)))
                 idx += 1
                 continue
@@ -383,6 +398,7 @@ class MarkdownConverter:
             # Handle reference-style links definitions
             ref_match = re.match(r'^\s*\[([^\s\]]+)\]:\s*(\S+)(?:\s+["\'](.*?)["\'])?$', line)
             if ref_match:
+                flush_paragraph()
                 idx += 1
                 continue
 
@@ -390,8 +406,8 @@ class MarkdownConverter:
             if line.strip().startswith('<') and re.match(r'^\s*</?[a-zA-Z0-9]+', line):
                 tag_match = re.match(r'^\s*</?([a-zA-Z0-9]+)', line)
                 tag = tag_match.group(1).lower()
-                # Allow block tags that should not be wrapped in <p>
                 if tag not in ['script', 'style', 'iframe', 'object', 'embed']:
+                    flush_paragraph()
                     html_output.append(line)
                     idx += 1
                     continue
@@ -399,38 +415,46 @@ class MarkdownConverter:
             # Handle headers and blocks
             processed = False
             if line.startswith('# '):
+                flush_paragraph()
                 content = line[2:]
                 html_output.append(f'<h1 id="{self._generate_id(content, existing_ids)}">{self._parse_inline(content, references)}</h1>')
                 processed = True
             elif line.startswith('## '):
+                flush_paragraph()
                 content = line[3:]
                 html_output.append(f'<h2 id="{self._generate_id(content, existing_ids)}">{self._parse_inline(content, references)}</h2>')
                 processed = True
             elif line.startswith('### '):
+                flush_paragraph()
                 content = line[4:]
                 html_output.append(f'<h3 id="{self._generate_id(content, existing_ids)}">{self._parse_inline(content, references)}</h3>')
                 processed = True
             elif line.startswith('#### '):
+                flush_paragraph()
                 content = line[5:]
                 html_output.append(f'<h4 id="{self._generate_id(content, existing_ids)}">{self._parse_inline(content, references)}</h4>')
                 processed = True
             elif line.startswith('##### '):
+                flush_paragraph()
                 content = line[6:]
                 html_output.append(f'<h5 id="{self._generate_id(content, existing_ids)}">{self._parse_inline(content, references)}</h5>')
                 processed = True
             elif line.startswith('###### '):
+                flush_paragraph()
                 content = line[7:]
                 html_output.append(f'<h6 id="{self._generate_id(content, existing_ids)}">{self._parse_inline(content, references)}</h6>')
                 processed = True
             
             if not processed:
                 if not line.strip():
+                    flush_paragraph()
                     idx += 1
                     continue
-                html_output.append(f'<p>{self._parse_inline(line, references)}</p>')
+                paragraph_buffer.append(line)
             
             idx += 1
 
+        flush_paragraph()
         flush_table()
         flush_blockquote()
         while list_stack:
