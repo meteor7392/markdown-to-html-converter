@@ -355,6 +355,8 @@ class MarkdownConverter:
                     idx += 2
                     continue
                 elif next_line and re.match(r'^\s*(-+)\s*$', next_line):
+                    # Standard Markdown: Setext H2 lines must not be preceded by an empty line
+                    # to avoid confusion with horizontal rules if they look similar
                     if line.strip():
                         header_text = line
                         header_id = self._generate_id(header_text, existing_ids)
@@ -487,7 +489,6 @@ class MarkdownConverter:
         text = re.sub(r'\*([^*]+?)\*', r'<em>\1</em>', text)
         text = re.sub(r'_([^_]+?)_', r'<em>\1</em>', text)
         text = re.sub(r'~~(.*?)~~', r'<s>\1</s>', text)
-        text = re.sub(r'__(.*?)__', r'<u>\1</u>', text) if '<u>' not in text else text # Simple underline toggle if not used for bold
         # To avoid conflict with bold __, we typically prefer a different marker or a specific rule
         # For this library, we will use a custom marker for underline: ++text++
         text = re.sub(r'\+\+(.*?)\+\+', r'<u>\1</u>', text)
