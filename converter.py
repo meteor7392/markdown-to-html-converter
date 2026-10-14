@@ -132,8 +132,9 @@ class MarkdownConverter:
             nonlocal paragraph_buffer
             if not paragraph_buffer:
                 return
-            content = ' '.join(paragraph_buffer)
-            html_output.append(f'<p>{self._parse_inline(content, references)}</p>')
+            content = ' '.join(paragraph_buffer).strip()
+            if content:
+                html_output.append(f'<p>{self._parse_inline(content, references)}</p>')
             paragraph_buffer = []
 
         def flush_table():
@@ -141,11 +142,9 @@ class MarkdownConverter:
             if not in_table:
                 return
             
-            # Clean buffer of empty lines to ensure we have a valid structure
             cleaned_buffer = [line for line in table_buffer if line.strip()]
             
             if len(cleaned_buffer) < 2:
-                # Not a valid table (needs header and separator)
                 for line in table_buffer:
                     if line.strip():
                         paragraph_buffer.append(line)
@@ -153,24 +152,19 @@ class MarkdownConverter:
                 in_table = False
                 return
 
-            # Process table lines
             table_html = ['<table border="1">']
             
             def split_row(row_line):
                 row_line = row_line.strip()
                 if not row_line:
                     return []
-                # Strip leading/trailing pipes if they exist
                 if row_line.startswith('|'):
                     row_line = row_line[1:]
                 if row_line.endswith('|'):
                     row_line = row_line[:-1]
                 return [cell.strip() for cell in row_line.split('|')]
 
-            # Header
             headers = split_row(cleaned_buffer[0])
-            
-            # Alignment from separator line (index 1)
             sep_cells = split_row(cleaned_buffer[1])
             alignments = []
             for s in sep_cells:
@@ -187,7 +181,6 @@ class MarkdownConverter:
                 table_html.append(f'<th style="text-align:{align}">{self._parse_inline(h, references)}</th>')
             table_html.append('</tr></thead><tbody>')
 
-            # Rows (skip the separator line at index 1)
             for line in cleaned_buffer[2:]:
                 row_line = line.strip()
                 if not row_line:
@@ -195,7 +188,6 @@ class MarkdownConverter:
                 
                 cells = split_row(row_line)
                 table_html.append('<tr>')
-                # Use header count to ensure row consistency
                 for i in range(len(headers)):
                     cell_content = cells[i] if i < len(cells) else ''
                     align = alignments[i] if i < len(alignments) else 'left'
@@ -213,11 +205,10 @@ class MarkdownConverter:
                 return
             
             html_output.append('<blockquote>')
-            # Combine buffer into paragraphs
             content = '\n'.join(blockquote_buffer)
             for p in content.split('\n\n'):
                 if p.strip():
-                    html_output.append(f'<p>{self._parse_inline(p.replace("\n", " "), references)}</p>')
+                    html_output.append(f'<p>{self._parse_inline(p.replace("\n", " ").strip(), references)}</p>')
                 else:
                     html_output.append('<p></p>')
             html_output.append('</blockquote>')
@@ -228,7 +219,6 @@ class MarkdownConverter:
         while idx < len(lines):
             line = lines[idx]
             
-            # Handle fenced code blocks
             if line.startswith('```'):
                 flush_paragraph()
                 flush_table()
@@ -244,7 +234,6 @@ class MarkdownConverter:
                 idx += 1
                 continue
             
-            # Handle indented code blocks (4 spaces or 1 tab)
             if not in_code_block and (line.startswith('    ') or line.startswith('\t')):
                 flush_paragraph()
                 flush_table()
@@ -270,21 +259,17 @@ class MarkdownConverter:
                 idx += 1
                 continue
             elif in_code_block:
-                # End of indented code block
                 html_output.append('<pre><code>')
                 html_output.append('\n'.join(code_buffer))
                 html_output.append('</code></pre>')
                 in_code_block = False
-                # We don't increment idx here so this line can be processed as other markdown
                 continue
 
             if in_code_block:
-                # This is for fenced blocks
                 code_buffer.append(html.escape(line))
                 idx += 1
                 continue
 
-            # Handle tables
             if '|' in line:
                 flush_paragraph()
                 flush_blockquote()
@@ -296,17 +281,9 @@ class MarkdownConverter:
                 idx += 1
                 continue
             else:
-                # Only flush if we were actually in a table
                 if in_table:
-                    # If the line is just whitespace, we might still be in a table
-                    # but Markdown usually treats empty lines as table terminators.
-                    if line.strip():
-                        flush_table()
-                    else:
-                        # For simplicity and standard behavior, empty line ends table.
-                        flush_table()
+                    flush_table()
 
-            # Handle blockquotes
             if line.startswith('>'):
                 flush_paragraph()
                 if not in_blockquote:
@@ -319,7 +296,6 @@ class MarkdownConverter:
             else:
                 flush_blockquote()
 
-            # Handle lists (including nested)
             ul_match = re.match(r'^(\s*)- ', line)
             ol_match = re.match(r'^(\s*)\d+\.\s', line)
             
@@ -328,7 +304,7 @@ class MarkdownConverter:
                 flush_blockquote()
                 indent = len(ul_match.group(1)) if ul_match else len(ol_match.group(1))
                 current_type = 'ul' if ul_match else 'ol'
-                content = re.sub(r'^\s*(- |\d+\.\s)', '', line)
+                content = re.sub(r'^\s*(- |\d+\.\s)', '', line).strip()
 
                 if not in_list:
                     in_list = True
@@ -361,7 +337,6 @@ class MarkdownConverter:
                         list_stack.pop()
                     in_list = False
 
-            # Handle Setext-style headers
             if idx + 1 < len(lines):
                 next_line = lines[idx + 1]
                 if next_line and re.match(r'^\s*(=+)\s*$', next_line):
@@ -380,14 +355,12 @@ class MarkdownConverter:
                         idx += 2
                         continue
 
-            # Handle horizontal rules
             if re.match(r'^\s*([-*_=])(\s*\1){2,}\s*$', line):
                 flush_paragraph()
                 html_output.append('<hr>')
                 idx += 1
                 continue
 
-            # Handle footnote definitions
             fn_match = re.match(r'^\s*\[\^([^]]+)\]:\s*(.*)', line)
             if fn_match:
                 flush_paragraph()
@@ -395,14 +368,12 @@ class MarkdownConverter:
                 idx += 1
                 continue
 
-            # Handle reference-style links definitions
             ref_match = re.match(r'^\s*\[([^\s\]]+)\]:\s*(\S+)(?:\s+["\'](.*?)["\'])?$', line)
             if ref_match:
                 flush_paragraph()
                 idx += 1
                 continue
 
-            # Handle block-level HTML
             if line.strip().startswith('<') and re.match(r'^\s*</?[a-zA-Z0-9]+', line):
                 tag_match = re.match(r'^\s*</?([a-zA-Z0-9]+)', line)
                 tag = tag_match.group(1).lower()
@@ -412,7 +383,6 @@ class MarkdownConverter:
                     idx += 1
                     continue
 
-            # Handle headers and blocks
             processed = False
             if line.startswith('# '):
                 flush_paragraph()
@@ -506,7 +476,6 @@ class MarkdownConverter:
             return f'__CODE_BLOCK_{len(code_blocks)-1}__'
         text = re.sub(r'`([^`]*)`', save_code, text)
         
-        # Highlight support
         text = re.sub(r'==([^=]+)==', r'<mark>\1</mark>', text)
 
         text = re.sub(r'\*\*\*([^*]+?)\*\*\*', r'<strong><em>\1</em></strong>', text)
@@ -516,8 +485,6 @@ class MarkdownConverter:
         text = re.sub(r'\*([^*]+?)\*', r'<em>\1</em>', text)
         text = re.sub(r'_([^_]+?)_', r'<em>\1</em>', text)
         text = re.sub(r'~~(.*?)~~', r'<s>\1</s>', text)
-        # To avoid conflict with bold __, we typically prefer a different marker or a specific rule
-        # For this library, we will use a custom marker for underline: ++text++
         text = re.sub(r'\+\+(.*?)\+\+', r'<u>\1</u>', text)
 
         def replace_image(match):
@@ -564,7 +531,6 @@ class MarkdownConverter:
 
         text = re.sub(r'\[(.*?)\](\((.*?)\)|\[(.*?)\])', replace_link, text)
         
-        # Automatic links <url>
         text = re.sub(r'<(https?://[^>]+)>', r'<a href="\1">\1</a>', text)
         
         for i, code in enumerate(code_blocks):
