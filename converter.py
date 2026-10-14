@@ -34,6 +34,16 @@ class MarkdownConverter:
         toc_items = []
         existing_ids = set()
         
+        # Collect references for the TOC as well
+        references = {}
+        for line in lines:
+            ref_match = re.match(r'^\s*\[([^\s\]]+)\]:\s*(\S+)(?:\s+["\'](.*?)["\'])?$', line)
+            if ref_match:
+                ref_id = ref_match.group(1)
+                url = ref_match.group(2)
+                title = ref_match.group(3) or ''
+                references[ref_id] = (url, title)
+
         idx = 0
         while idx < len(lines):
             line = lines[idx]
@@ -43,7 +53,7 @@ class MarkdownConverter:
                 level = len(atx_match.group(1))
                 content = atx_match.group(2)
                 header_id = self._generate_id(content, existing_ids)
-                parsed_content = self._parse_inline(content)
+                parsed_content = self._parse_inline(content, references)
                 toc_items.append((level, f'<li><a href="#{header_id}">{parsed_content}</a></li>'))
                 idx += 1
                 continue
@@ -54,7 +64,7 @@ class MarkdownConverter:
                 if next_line and re.match(r'^\s*(=+)\s*$', next_line):
                     content = line
                     header_id = self._generate_id(content, existing_ids)
-                    parsed_content = self._parse_inline(content)
+                    parsed_content = self._parse_inline(content, references)
                     toc_items.append((1, f'<li><a href="#{header_id}">{parsed_content}</a></li>'))
                     idx += 2
                     continue
@@ -65,7 +75,7 @@ class MarkdownConverter:
                     elif line.strip():
                         content = line
                         header_id = self._generate_id(content, existing_ids)
-                        parsed_content = self._parse_inline(content)
+                        parsed_content = self._parse_inline(content, references)
                         toc_items.append((2, f'<li><a href="#{header_id}">{parsed_content}</a></li>'))
                         idx += 2
                         continue
