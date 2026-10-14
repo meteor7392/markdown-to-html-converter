@@ -43,7 +43,8 @@ class MarkdownConverter:
                 level = len(atx_match.group(1))
                 content = atx_match.group(2)
                 header_id = self._generate_id(content, existing_ids)
-                toc_items.append((level, f'<li><a href="#{header_id}">{content}</a></li>'))
+                parsed_content = self._parse_inline(content)
+                toc_items.append((level, f'<li><a href="#{header_id}">{parsed_content}</a></li>'))
                 idx += 1
                 continue
             
@@ -53,7 +54,8 @@ class MarkdownConverter:
                 if next_line and re.match(r'^\s*(=+)\s*$', next_line):
                     content = line
                     header_id = self._generate_id(content, existing_ids)
-                    toc_items.append((1, f'<li><a href="#{header_id}">{content}</a></li>'))
+                    parsed_content = self._parse_inline(content)
+                    toc_items.append((1, f'<li><a href="#{header_id}">{parsed_content}</a></li>'))
                     idx += 2
                     continue
                 elif next_line and re.match(r'^\s*(-+)\s*$', next_line):
@@ -63,7 +65,8 @@ class MarkdownConverter:
                     elif line.strip():
                         content = line
                         header_id = self._generate_id(content, existing_ids)
-                        toc_items.append((2, f'<li><a href="#{header_id}">{content}</a></li>'))
+                        parsed_content = self._parse_inline(content)
+                        toc_items.append((2, f'<li><a href="#{header_id}">{parsed_content}</a></li>'))
                         idx += 2
                         continue
             
