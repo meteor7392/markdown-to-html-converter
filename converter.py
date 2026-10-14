@@ -166,6 +166,16 @@ class MarkdownConverter:
 
             headers = split_row(cleaned_buffer[0])
             sep_cells = split_row(cleaned_buffer[1])
+            
+            # Validate that the second row is actually a separator row
+            if not all(re.match(r'^[:\s-]*$', s) for s in sep_cells):
+                for line in table_buffer:
+                    if line.strip():
+                        paragraph_buffer.append(line)
+                table_buffer = []
+                in_table = False
+                return
+
             alignments = []
             for s in sep_cells:
                 if s.startswith(':') and s.endswith(':'):
