@@ -47,6 +47,7 @@ class MarkdownConverter:
         idx = 0
         while idx < len(lines):
             line = lines[idx]
+            
             # Match ATX headers (# Header) - allow leading indentation
             atx_match = re.match(r'^\s*(#{1,6})\s+(.*)', line)
             if atx_match:
@@ -61,19 +62,19 @@ class MarkdownConverter:
             # Match Setext headers (H1: ===, H2: ---)
             if idx + 1 < len(lines):
                 next_line = lines[idx + 1]
+                # Setext H1
                 if next_line and re.match(r'^\s*(=+)\s*$', next_line):
-                    content = line
-                    header_id = self._generate_id(content, existing_ids)
-                    parsed_content = self._parse_inline(content, references)
-                    toc_items.append((1, f'<li><a href="#{header_id}">{parsed_content}</a></li>'))
-                    idx += 2
-                    continue
-                elif next_line and re.match(r'^\s*(-+)\s*$', next_line):
-                    if idx > 0 and not lines[idx-1].strip():
-                        idx += 1
+                    content = line.strip()
+                    if content:
+                        header_id = self._generate_id(content, existing_ids)
+                        parsed_content = self._parse_inline(content, references)
+                        toc_items.append((1, f'<li><a href="#{header_id}">{parsed_content}</a></li>'))
+                        idx += 2
                         continue
-                    elif line.strip():
-                        content = line
+                # Setext H2
+                elif next_line and re.match(r'^\s*(-+)\s*$', next_line):
+                    content = line.strip()
+                    if content:
                         header_id = self._generate_id(content, existing_ids)
                         parsed_content = self._parse_inline(content, references)
                         toc_items.append((2, f'<li><a href="#{header_id}">{parsed_content}</a></li>'))
