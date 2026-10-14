@@ -103,7 +103,7 @@ class MarkdownConverter:
     def convert(self, text):
         lines = text.split('\n')
         
-        # Pass 1: Collect all reference-style link definitions
+        # Pass 1: Collect all reference-style link and image definitions
         references = {}
         for line in lines:
             ref_match = re.match(r'^\s*\[([^\s\]]+)\]:\s*(\S+)(?:\s+["\'](.*?)["\'])?$', line)
