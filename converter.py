@@ -128,6 +128,11 @@ class MarkdownConverter:
         existing_ids = set()
         paragraph_buffer = []
 
+        def flush_all():
+            flush_paragraph()
+            flush_table()
+            flush_blockquote()
+
         def flush_paragraph():
             nonlocal paragraph_buffer
             if not paragraph_buffer:
@@ -232,9 +237,7 @@ class MarkdownConverter:
             line = lines[idx]
             
             if line.startswith('```'):
-                flush_paragraph()
-                flush_table()
-                flush_blockquote()
+                flush_all()
                 if not in_code_block:
                     in_code_block = True
                     code_buffer = []
@@ -247,9 +250,7 @@ class MarkdownConverter:
                 continue
             
             if not in_code_block and (line.startswith('    ') or line.startswith('\t')):
-                flush_paragraph()
-                flush_table()
-                flush_blockquote()
+                flush_all()
                 if in_list:
                     while list_stack:
                         html_output.append(f'</{list_stack[-1][1]}>')
@@ -312,8 +313,7 @@ class MarkdownConverter:
             ol_match = re.match(r'^(\s*)\d+\.\s', line)
             
             if ul_match or ol_match:
-                flush_paragraph()
-                flush_blockquote()
+                flush_all()
                 indent = len(ul_match.group(1)) if ul_match else len(ol_match.group(1))
                 current_type = 'ul' if ul_match else 'ol'
                 content = re.sub(r'^\s*(- |\d+\.\s)', '', line).strip()
@@ -343,7 +343,7 @@ class MarkdownConverter:
                 continue
             else:
                 if in_list:
-                    flush_paragraph()
+                    flush_all()
                     while list_stack:
                         html_output.append(f'</{list_stack[-1][1]}>')
                         list_stack.pop()
@@ -352,7 +352,7 @@ class MarkdownConverter:
             if idx + 1 < len(lines):
                 next_line = lines[idx + 1]
                 if next_line and re.match(r'^\s*(=+)\s*$', next_line):
-                    flush_paragraph()
+                    flush_all()
                     header_text = line
                     header_id = self._generate_id(header_text, existing_ids)
                     html_output.append(f'<h1 id="{header_id}">{self._parse_inline(header_text, references)}</h1>')
@@ -360,7 +360,7 @@ class MarkdownConverter:
                     continue
                 elif next_line and re.match(r'^\s*(-+)\s*$', next_line):
                     if line.strip():
-                        flush_paragraph()
+                        flush_all()
                         header_text = line
                         header_id = self._generate_id(header_text, existing_ids)
                         html_output.append(f'<h2 id="{header_id}">{self._parse_inline(header_text, references)}</h2>')
@@ -368,21 +368,21 @@ class MarkdownConverter:
                         continue
 
             if re.match(r'^\s*([-*_=])(\s*\1){2,}\s*$', line):
-                flush_paragraph()
+                flush_all()
                 html_output.append('<hr>')
                 idx += 1
                 continue
 
             fn_match = re.match(r'^\s*\[\^([^]]+)\]:\s*(.*)', line)
             if fn_match:
-                flush_paragraph()
+                flush_all()
                 footnotes.append((fn_match.group(1), fn_match.group(2)))
                 idx += 1
                 continue
 
             ref_match = re.match(r'^\s*\[([^\s\]]+)\]:\s*(\S+)(?:\s+["\'](.*?)["\'])?$', line)
             if ref_match:
-                flush_paragraph()
+                flush_all()
                 idx += 1
                 continue
 
@@ -390,55 +390,53 @@ class MarkdownConverter:
                 tag_match = re.match(r'^\s*</?([a-zA-Z0-9]+)', line)
                 tag = tag_match.group(1).lower()
                 if tag not in ['script', 'style', 'iframe', 'object', 'embed']:
-                    flush_paragraph()
+                    flush_all()
                     html_output.append(line)
                     idx += 1
                     continue
 
             processed = False
             if line.startswith('# '):
-                flush_paragraph()
+                flush_all()
                 content = line[2:]
                 html_output.append(f'<h1 id="{self._generate_id(content, existing_ids)}">{self._parse_inline(content, references)}</h1>')
                 processed = True
             elif line.startswith('## '):
-                flush_paragraph()
+                flush_all()
                 content = line[3:]
                 html_output.append(f'<h2 id="{self._generate_id(content, existing_ids)}">{self._parse_inline(content, references)}</h2>')
                 processed = True
             elif line.startswith('### '):
-                flush_paragraph()
+                flush_all()
                 content = line[4:]
                 html_output.append(f'<h3 id="{self._generate_id(content, existing_ids)}">{self._parse_inline(content, references)}</h3>')
                 processed = True
             elif line.startswith('#### '):
-                flush_paragraph()
+                flush_all()
                 content = line[5:]
                 html_output.append(f'<h4 id="{self._generate_id(content, existing_ids)}">{self._parse_inline(content, references)}</h4>')
                 processed = True
             elif line.startswith('##### '):
-                flush_paragraph()
+                flush_all()
                 content = line[6:]
                 html_output.append(f'<h5 id="{self._generate_id(content, existing_ids)}">{self._parse_inline(content, references)}</h5>')
                 processed = True
             elif line.startswith('###### '):
-                flush_paragraph()
+                flush_all()
                 content = line[7:]
                 html_output.append(f'<h6 id="{self._generate_id(content, existing_ids)}">{self._parse_inline(content, references)}</h6>')
                 processed = True
             
             if not processed:
                 if not line.strip():
-                    flush_paragraph()
+                    flush_all()
                     idx += 1
                     continue
                 paragraph_buffer.append(line)
             
             idx += 1
 
-        flush_paragraph()
-        flush_table()
-        flush_blockquote()
+        flush_all()
         while list_stack:
             html_output.append(f'</{list_stack[-1][1]}>')
             list_stack.pop()
