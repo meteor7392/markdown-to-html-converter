@@ -158,6 +158,7 @@ class MarkdownConverter:
                 row_line = row_line.strip()
                 if not row_line:
                     return []
+                # Remove outer pipes if present
                 if row_line.startswith('|'):
                     row_line = row_line[1:]
                 if row_line.endswith('|'):
@@ -198,6 +199,7 @@ class MarkdownConverter:
                 
                 cells = split_row(row_line)
                 table_html.append('<tr>')
+                # Use headers length to ensure consistent column count
                 for i in range(len(headers)):
                     cell_content = cells[i] if i < len(cells) else ''
                     align = alignments[i] if i < len(alignments) else 'left'
