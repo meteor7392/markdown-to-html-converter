@@ -191,5 +191,14 @@ class TestMarkdownConverter(unittest.TestCase):
         self.assertIn('<a href="#sub-121">Sub 1.2.1</a>', toc)
         self.assertIn('<a href="#header-2">Header 2</a>', toc)
 
+    def test_generate_toc_jump_levels(self):
+        md = "# H1\n### H3\n# H1-2"
+        toc = self.converter.generate_toc(md)
+        # H1 (level 1) -> H3 (level 3) should open two <ul>
+        # H3 (level 3) -> H1-2 (level 1) should close two <ul>
+        expected_parts = ['<ul class="toc">', '<li><a href="#h1">H1</a></li>', '<ul><ul>', '<li><a href="#h3">H3</a></li>', '</ul></ul>', '<li><a href="#h1-2">H1-2</a></li>', '</ul>']
+        for part in expected_parts:
+            self.assertIn(part, toc)
+
 if __name__ == '__main__':
     unittest.main()
