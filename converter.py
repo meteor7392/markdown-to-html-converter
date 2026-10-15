@@ -148,7 +148,9 @@ class MarkdownConverter:
             nonlocal paragraph_buffer
             if not paragraph_buffer:
                 return
+            # Join with space but avoid creating double spaces
             content = ' '.join(paragraph_buffer).strip()
+            content = re.sub(r'\s+', ' ', content)
             if content:
                 html_output.append(f'<p>{self._parse_inline(content, references)}</p>')
             paragraph_buffer = []
@@ -321,32 +323,41 @@ class MarkdownConverter:
                 flush_blockquote()
 
             ul_match = re.match(r'^(\s*)- ', line)
-            ol_match = re.match(r'^(\s*)\d+\.\s', line)
+            ol_match = re.match(r'^(\s*)(\d+)\.\s', line)
             
             if ul_match or ol_match:
                 flush_all()
                 indent = len(ul_match.group(1)) if ul_match else len(ol_match.group(1))
                 current_type = 'ul' if ul_match else 'ol'
-                content = re.sub(r'^\s*(- |\d+\.\s)', '', line).strip()
+                
+                if current_type == 'ol':
+                    start_num = int(ol_match.group(2))
+                    content = line[len(ol_match.group(1)) + len(ol_match.group(2)) + 2:].strip()
+                else:
+                    content = re.sub(r'^\s*(- |\d+\.\s)', '', line).strip()
 
                 if not in_list:
                     in_list = True
-                    html_output.append(f'<{current_type}>')
+                    start_attr = f' start="{start_num}"' if current_type == 'ol' else ''
+                    html_output.append(f'<{current_type}{start_attr}>')
                     list_stack.append((indent, current_type))
                 else:
                     if indent > (list_stack[-1][0] if list_stack else -1):
-                        html_output.append(f'<{current_type}>')
+                        start_attr = f' start="{start_num}"' if current_type == 'ol' else ''
+                        html_output.append(f'<{current_type}{start_attr}>')
                         list_stack.append((indent, current_type))
                     elif indent < (list_stack[-1][0] if list_stack else -1):
                         while list_stack and indent < list_stack[-1][0]:
                             html_output.append(f'</{list_stack[-1][1]}>')
                             list_stack.pop()
                         if not list_stack or indent != list_stack[-1][0]:
-                            html_output.append(f'<{current_type}>')
+                            start_attr = f' start="{start_num}"' if current_type == 'ol' else ''
+                            html_output.append(f'<{current_type}{start_attr}>')
                             list_stack.append((indent, current_type))
                     elif current_type != list_stack[-1][1]:
                         html_output.append(f'</{list_stack[-1][1]}>')
-                        html_output.append(f'<{current_type}>')
+                        start_attr = f' start="{start_num}"' if current_type == 'ol' else ''
+                        html_output.append(f'<{current_type}{start_attr}>')
                         list_stack[-1] = (indent, current_type)
                 
                 html_output.append(f'<li>{self._parse_inline(content, references)}</li>')
