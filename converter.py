@@ -187,7 +187,7 @@ class MarkdownConverter:
             sep_cells = split_row(cleaned_buffer[1])
             
             # Validate that the second row is actually a separator row
-            if not all(re.match(r'^[:\s-]*$', s) for s in sep_cells):
+            if not all(re.match(r'^[:\s-]*$', s) for s in sep_cells) or not sep_cells:
                 for line in table_buffer:
                     if line.strip():
                         paragraph_buffer.append(line)
