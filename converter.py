@@ -286,10 +286,12 @@ class MarkdownConverter:
                 idx += 1
                 continue
             elif in_code_block:
+                # The line doesn't start with indentation or is not empty, so it ends the indented code block
                 html_output.append('<pre><code>')
                 html_output.append('\n'.join(code_buffer))
                 html_output.append('</code></pre>')
                 in_code_block = False
+                # Do not increment idx, let the current line be processed by other rules
                 continue
 
             if in_code_block:
