@@ -235,10 +235,11 @@ class MarkdownConverter:
                 return
             
             html_output.append('<blockquote>')
-            content = '\n'.join(blockquote_buffer)
-            for p in content.split('\n\n'):
+            content_text = '\n'.join(blockquote_buffer)
+            for p in content_text.split('\n\n'):
                 if p.strip():
-                    html_output.append(f'<p>{self._parse_inline(p.replace("\n", " ").strip(), references)}</p>')
+                    cleaned_p = p.replace("\n", " ").strip()
+                    html_output.append(f'<p>{self._parse_inline(cleaned_p, references)}</p>')
                 else:
                     html_output.append('<p></p>')
             html_output.append('</blockquote>')
